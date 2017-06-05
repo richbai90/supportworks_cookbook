@@ -48,4 +48,5 @@ end
 supportworks_server 'C:\Program Files (x86)\Hornbill\Supportworks Server' do
   action :configure
   version '8.2'
+  license 'Bittercreek Technology, Inc'
 end
