@@ -1,0 +1,52 @@
+<?php
+	//-- increment this for each release - this will mean important js files will be re-cached in browsers
+	define('_CACHEFILEVERSION','2016_06_24_2_0_2_QA_2');
+
+	define('_DEVMODE',false);
+	define('_QAMODE',false);
+	define('_VERSION',' - 2.0.2');
+	define('_INSTANCE_NAME','webclient');
+	define('_SERVER_NAME', '127.0.0.1');
+	define("_INSTANCE_INSTALL","webclient");
+
+	define("_LOG_WC_SQL_ACTIVITY",false);
+	define("_LOG_WC_XMLMC_ACTIVITY",false);
+	define("_LOG_WC_XMLMC_RESPONSE",false);
+	define("_LOG_WC_5005_ACTIVITY",false);
+	define("_LOG_WC_SERVICE_ACTIVITY",false);
+	define("_ORACLE_CASE_INSENSITIVE",true);
+
+	//-- security options - if your webclient server is accessible outside of your intranet then switch these on.
+	define("_SECURITY_CSRF_ON",true); //-- switch on/off csrf token checking
+	define("_SECURITY_URLPARAMS_ON",<%= @enhanced_security %>); //-- switch on/off parameter cheking for defined urls
+
+	//-- SHOW DISCLAIMER IMAGE (client/images/disclaimer.png)
+	define("_WC_SHOWDISCLAIMER",false);
+
+	//-- SHOW SECURITY NOTE IMAGE (client/images/securitynotice.png)
+	define("_WC_SHOWSECURITYNOTES",false);
+
+
+	//-- SSPI
+	//define("_WC_TRUSTEDLOGON","TRUE");
+	//-- ENABLE IF USING UPN
+	//define("_WC_UPN_SUPPORT","TRUE");
+	//define("_WC_TOPLEVEL_DOMAIN","internal.hornbill.com");
+	//define("_WC_USE_REMOTE_DOMAIN","TRUE"); //-- USE DOMAIN SPECIFIED BY REMOTE USER  VARIABLE
+	//-- EOF SSPI
+
+	//-- enable when running on remote webserver (has to use apache reverse proxy - http://httpd.apache.org/docs/2.1/mod/mod_proxy.html)
+	//-- set _proxyport typically to 80 for http and 443 for https or to whatever the proxy server port is - this is required in order to support swjs session.httpPort variable
+	//define("_PROXYURL","http://192.168.0.106/webclient");
+	//define("_PROXYPORT","80");
+
+	//-- and add below to apache conf file - replace <swserver> with name or ip of sw server
+//--
+/*
+ProxyPass /webclient http://<swserver>/sw/webclient
+  ProxyPassReverse /webclient http://<swserver>/sw/webclient
+  ProxyPass /sw http://<swserver>/sw
+  ProxyPassReverse /sw http://<swserver>/sw
+  ProxyRequests Off
+  */
+  ?>

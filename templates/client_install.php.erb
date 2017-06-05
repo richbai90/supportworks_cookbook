@@ -1,0 +1,138 @@
+<?php 	include("\..\..\html\_phpinclude\stdinclude.php");
+	include("../xml.inc");
+
+	//-- NWJ - load xml file to generate welcome content
+	$xmlRoot = Null;
+	$xmlFileName = "content-software.xml";
+	$xmlfile = file_get_contents($xmlFileName);
+
+	//-- create dom instance of the xml file
+	$xmlDoc = domxml_open_mem($xmlfile);
+	if($xmlDoc==false)
+	{
+		exit;
+	}
+
+	//-- get root and title
+	$xmlRoot = $xmlDoc->document_element();
+
+$xmlTitles = $xmlRoot->get_elements_by_tagname("title");
+if($xmlTitles[0])$strPageTitle = $xmlTitles[0]->get_content();
+
+//-- find paragraphs from xml and get content and target
+$xmlParas = $xmlRoot->get_elements_by_tagname("paragraph");
+foreach($xmlParas as $pKey => $aPara)
+{
+$content = $aPara->get_content();
+$target = getAttribute("target",$aPara->attributes());
+$evalstr = '$content';
+eval("\$$target = \"$evalstr\";");
+}
+
+// -- 12/05/2015 - Migration link no longer required
+
+$display_StrWC = (isset($strWC)) ? $strWC : "";
+$display_p5 = (isset($p5)) ? $p5 : "";
+
+?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html>
+<head>
+  <title>Hornbill Supportworks Server ESP</title>
+  <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+
+  <link href="../css/structure_ss.css" rel="stylesheet" type="text/css" />
+  <link href="../css/elements.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+
+<div id="pageArea">
+
+  <div id="topBanner">
+    <img src="../img/header/sw-logo-on-blue.gif" width="180" height="40" alt="" border="0" style="margin-left: 20px;" /><br />
+    <img src="../img/header/title-installation-complete.gif" width="180" height="35" alt="" border="0" style="margin-left: 40px;" /><div id="helpbox"></div>
+  </div>
+  <div id="navColumn">
+    <ul>
+      <li><a href="/sw/index.php">Welcome</a></li>
+      <li><a href="/sw/gettinghelp/index.php" >Getting Help</a></li>
+      <li><a class="selected" href="/sw/software/index.php">Client Software</a></li>
+    </ul>
+  </div>
+
+  <div id="contentColumn">
+    <h1><?php echo $strPageTitle?></h1>
+
+    <h2><?php echo $strSubTitle?></h2>
+
+    <p><?php echo $p1?></p>
+
+    <table align="center" class="dataTable">
+      <thead>
+      <tr>
+        <th align="right">Your Server's Setting</th>
+        <th>Value</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+        <td align="right"><strong>Name:</strong></td>
+        <td><?php  echo sw_gethostname(); ?></td>
+      </tr>
+      </tbody>
+    </table>
+    <p>&nbsp;</p>
+
+    <p><?php echo $p2?></p>
+
+    <p><?php echo $p3?></p>
+
+
+    <table align="center" class="dataTable">
+      <thead>
+      <tr>
+        <th>Software</th>
+        <th>Action</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+        <td ><a href="/sw/clients/client.setup.zip">Supportworks Launcher</a></td>
+        <td><a href="/sw/clients/client.setup.zip">Install</a> </td>
+      </tr>
+      <!--							<tr>
+                      <td><a href="/cs/tools/SwOdbcSetup.exe">MariaDB ODBC Driver</a></td>
+                      <td><a href="/cs/tools/SwOdbcSetup.exe">Install</a> </td>
+                    </tr>-->
+      <!--td>MariaDB ODBC Driver</td>
+      <td>Install</td-->
+      </tbody>
+    </table>
+
+    <p>&nbsp;</p>
+
+    <h3><?php echo $strSS?></h3>
+
+    <p><?php echo $p4?></p>
+
+    <h3><?php echo $display_StrWC?></h3>
+
+    <p><?php echo $display_p5?></p>
+
+    <h3><?php echo $strNewWC?></h3>
+
+    <p><?php echo $p6?></p>
+
+  </div>
+
+  <div id="pageFooter">
+    <p>Copyright 2016, Hornbill Technologies Ltd</p>
+  </div>
+
+
+</div>
+<!-- ********** END PAGE AREA **********-->
+</body>
+</html>

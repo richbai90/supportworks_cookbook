@@ -1,0 +1,40 @@
+add-type -AssemblyName microsoft.VisualBasic
+
+add-type -AssemblyName System.Windows.Forms
+
+new-alias  Out-Clipboard $env:SystemRoot\system32\clip.exe
+echo "<%= @lic %>" | clip
+
+$setup = 0
+while ($setup -ne 1) {
+Get-Process | where {$_.mainWindowTitle} | ForEach-Object {
+If ($_.mainWindowTitle -match 'Supportworks Server setup') {
+$setup++
+}
+}
+start-sleep -Seconds 1
+}
+
+start-sleep -Seconds 5
+
+[Microsoft.VisualBasic.Interaction]::AppActivate("supportworks")
+
+[System.Windows.Forms.SendKeys]::SendWait("OKComputer!!!{ENTER}")
+[System.Windows.Forms.SendKeys]::SendWait("{ENTER}")
+[System.Windows.Forms.SendKeys]::SendWait("{TAB} {ENTER}")
+[System.Windows.Forms.SendKeys]::SendWait("{TAB}{TAB}{TAB} {ENTER}")
+[System.Windows.Forms.SendKeys]::SendWait("{TAB}{TAB}^v{enter}")
+[System.Windows.Forms.SendKeys]::SendWait("<%= @admin_pw %>{TAB}<%= @admin_pw %>{enter}")
+
+echo "<%= @install_path %>" | clip
+
+[System.Windows.Forms.SendKeys]::SendWait("{TAB}{TAB}^v{enter}")
+[System.Windows.Forms.SendKeys]::SendWait("{TAB}{TAB}{TAB}<%= @db[:user][0] %>{tab}<%= @db[:pw][0] %>{enter}")
+[System.Windows.Forms.SendKeys]::SendWait(
+<% if @db[:type] == :sw %>
+    "{ENTER}"
+    )
+<% else %>
+    "{TAB}{TAB}{TAB}{DOWN}<%= @dsn %>{TAB}{TAB}<%= @db[:user][1] %>{TAB}<%= @db[:pw][1] %>{ENTER}"
+    )
+<% end %>

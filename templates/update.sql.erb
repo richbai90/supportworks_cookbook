@@ -1,0 +1,4 @@
+REPLACE INTO sw_config.sw_databases VALUES ('swdata','<%= @dsn %>', '<%= @uid %>', '<%= @pwd %>', 1);
+DELETE FROM sw_config.sw_databases WHERE dbname != 'swdata';
+SET PASSWORD FOR '<%= @root %>'@'localhost' = OLD_PASSWORD('<%= @root_pwd %>');
+FLUSH PRIVILEGES;
