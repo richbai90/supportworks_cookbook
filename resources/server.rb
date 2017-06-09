@@ -1,4 +1,5 @@
 property :version, String, default: '8.2'
+property :media, String
 property :path, [String, Symbol], name_property: true
 property :license, String, required: true
 property :db_type, Symbol, default: :sw
@@ -42,7 +43,7 @@ action :install do
 
   windows_package 'ESP' do
     action :install
-    source repo_from_version('sw', new_resource.version)
+    source repo_from_version('sw', new_resource.version, new_resource.media)
     installer_type :custom
     only_if { registry_data_exists?(csreg(node), :name => 'Version', :type => :string, :data => '6.0.0') }
     not_if { registry_key_exists?(swgreg(node), :name => 'Supportworks Server')}

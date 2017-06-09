@@ -8,16 +8,19 @@
 
 supportworks_core_services 'cs' do
   action :install #default
-  path 'C:\Hornbill'
+  path 'D:\Program Files (x86)\Hornbill\Core Services'
   root_pw 'testing'
   version '6.0'
+  media 'C:\swmedia'
 end
 
 supportworks_migrate '192.168.1.136' do
-  user 'migrate'
-  password 'password'
+  from_user 'migrate'
+  from_password 'password'
+  to_user 'root'
+  to_pw 'testing'
   root_user 'root'
-  root_pw 'testing'
+  root_password 'testing'
   update_password true
   old_root_password ''
   # swdata_user nil
@@ -43,6 +46,7 @@ c05e2c8cf3ad5664b574648dbb1d5deb8065868e8d34e7a4
   cache_db_user 'root'
   cache_db_password 'testing'
   sw_admin_pw 'password'
+  media 'C:\swmedia'
 end
 
 supportworks_server 'C:\Program Files (x86)\Hornbill\Supportworks Server' do

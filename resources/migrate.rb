@@ -1,8 +1,10 @@
 property :host, String, name_property: true
-property :user, String, required: true
-property :password, String, required: true
+property :from_user, String, required: true
+property :from_password, String, required: true
+property :to_user, String, default: 'root'
+property :to_pw, String, default: ''
 property :root_user, String, default: 'root'
-property :root_pw, String, default: ''
+property :root_password, String, default: ''
 property :swdata_user, String
 property :swdata_pw, String
 property :swdata_dsn, String, default: 'Supportworks Data'
@@ -23,7 +25,7 @@ action :migrate do
   execute 'dump' do
     retries 3
     retry_delay 2
-    command "#{mysqldump} -h #{new_resource.host} -u #{new_resource.user} -p#{new_resource.password} --port 5002 --all-databases --add-drop-table --single-transaction > #{::File.join(Chef::Config['file_cache_path'], 'dump.sql')}"
+    command "#{mysqldump} -h #{new_resource.host} -u #{new_resource.from_user} -p#{new_resource.from_password} --port 5002 --all-databases --add-drop-table --single-transaction > #{::File.join(Chef::Config['file_cache_path'], 'dump.sql')}"
   end
 
   execute 'restore' do
@@ -34,8 +36,8 @@ action :migrate do
     source 'update.sql.erb'
     variables({
                   :dsn => swdata_dsn,
-                  :uid => swdata_user || root_user,
-                  :pwd => swdata_pw || root_pw,
+                  :uid => swdata_user || to_user,
+                  :pwd => swdata_pw || to_pw,
                   :root => root_user,
                   :root_pwd => root_pw
               })

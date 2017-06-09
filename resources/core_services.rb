@@ -1,5 +1,6 @@
 property :version, String, default: '6.0'
 property :path, String, default: Supportworks::Helpers.install_path('cs', node)
+property :media, String
 property :root_user, String, default: 'root'
 property :root_pw
 property :db_type, Symbol, default: :sw
@@ -15,7 +16,7 @@ action :install do
   windows_package 'CsSetup' do
     action :install
     checksum checksum_from_version('cs', new_resource.version)
-    source repo_from_version('cs', new_resource.version)
+    source repo_from_version('cs', new_resource.version, new_resource.media)
     options create_option_string(:INSTALLDIR => path)
     not_if { registry_key_exists?(csreg(node)) }
   end

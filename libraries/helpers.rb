@@ -44,13 +44,21 @@ module Supportworks
       end
     end
 
-    def repo_from_version(which, version)
+    def repo_from_version(which, version, media = nil)
       version = pad_version(version)
       case which
         when 'cs'
-          "https://files.hornbill.com/coreservices/R_CS_#{version.join('_')}/CsSetup.msi"
+          if media.nil?
+            "https://files.hornbill.com/coreservices/R_CS_#{version.join('_')}/CsSetup.msi"
+          else
+            "#{media}/CsSetup.msi"
+          end
         when 'sw'
-          "https://files.hornbill.com/supportworks/R_SW_#{version.join('_')}/SwSetup.exe"
+          if media.nil?
+            "https://files.hornbill.com/supportworks/R_SW_#{version.join('_')}/SwSetup.exe"
+          else
+            "#{media}/SwSetup.exe"
+          end
         else
           raise "Unknown option provided for which #{which} expected 'sw' or 'cs'"
       end
