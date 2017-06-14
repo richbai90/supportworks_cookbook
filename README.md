@@ -4,9 +4,12 @@ Installs and configures Supportworks >= 8.1
 
 ## Requirements
 
-
-
-
+- Create a mysql user on your current production server to use as the migration account
+   - ```GRANT select on *.* to 'migrate'@'<new server ip> identified by 'password'```
+- Download the required installation media and save it to D:\swmedia
+  - CsSetup.msi: https://files.hornbill.com/coreservices/R_CS_6_0_0/CsSetup.msi
+  - SwSetup.exe: https://files.hornbill.com/supportworks/R_SW_8_2_0/SwSetup.exe
+  - ITSM_DEFAULT_420: https://github.com/richbai90/BTI_Zapps/blob/master/ITSM_Default_421.zapp
 ### Platforms
 
 - Microsoft Windows Server >= 2012
@@ -31,10 +34,10 @@ TODO: List your cookbook attributes here.
     <th>Default</th>
   </tr>
   <tr>
-    <td><tt>['Supportworks_82']['bacon']</tt></td>
-    <td>Boolean</td>
-    <td>whether to include bacon</td>
-    <td><tt>true</tt></td>
+    <td><tt></tt></td>
+    <td></td>
+    <td></td>
+    <td><tt></tt></td>
   </tr>
 </table>
 
@@ -42,31 +45,11 @@ TODO: List your cookbook attributes here.
 
 ### Supportworks_82::default
 
-TODO: Write usage instructions for each cookbook.
 
-
-Just include `Supportworks_82` in your node's `run_list`:
-
-```json
-{
-  "name":"my_node",
-  "run_list": [
-    "recipe[Supportworks_82]"
-  ]
-}
-```
-
-## Contributing
-
-TODO: (optional) If this is a public cookbook, detail the process for contributing. If this is a private cookbook, remove this section.
-
-
-1. Fork the repository on Github
-2. Create a named feature branch (like `add_component_x`)
-3. Write your change
-4. Write tests for your change (if applicable)
-5. Run the tests, ensuring they all pass
-6. Submit a Pull Request using Github
+- Download Chef DK
+- Create a folder called D:\cookbooks
+- Clone this repo into that folder and rename it to supportworks
+- In a new powershell window (not chef-dk) cd to D:\ and run `chef-client -A -z -o supportworks`
 
 ## License and Authors
 
