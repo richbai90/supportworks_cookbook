@@ -11,46 +11,43 @@ supportworks_core_services 'cs' do
   path 'D:\Program Files (x86)\Hornbill\Core Services'
   root_pw 'testing'
   version '6.0'
-  media 'C:\swmedia'
+  media 'D:\swmedia'
 end
 
-supportworks_migrate '192.168.1.136' do
+supportworks_migrate '192.168.1.145' do
   from_user 'migrate'
   from_password 'password'
   to_user 'root'
-  to_pw 'testing'
-  root_user 'root'
-  root_password 'testing'
+  to_password 'testing'
   update_password true
-  old_root_password ''
-  # swdata_user nil
-  # swdata_pw nil
   swdata_dsn 'Supportworks Data' #default
 end
 
-supportworks_server 'C:\Program Files (x86)\Hornbill\Supportworks Server' do
+supportworks_server 'D:\Program Files (x86)\Hornbill\Supportworks Server' do
   action :install
   version '8.2'
-  path :default # overwrites what's in the name. Tells the automator to use the default path
+  # path :default # overwrites what's in the name. Tells the automator to use the default path
   license '------------------ BEGIN KEY -------------------
-9ef28a30c8333dc15d4394d206d9d3dc7ed95ebfcbc010e8
-0c40b51b741f2aee0a4f3dd3b64793f58e61cb880f1b9478
-c9aa3b45dd8edf4a6d9c76a7df19693b45cf6e171e17fdaa
-f08ae91b0f919896a1b452e244b0e093fb62c34ecddaccb7
-f5ad195d344c376e8463fcbff1866bf383e978ed54d7bced
-b4aa671b9c652c03613982629c56a427666078de56e42734
-c05e2c8cf3ad5664b574648dbb1d5deb8065868e8d34e7a4
-930365f6fbdcf6368e35e2d2608d3cd40612555b
+5099d662ad650d6fa16d8090f7eb3801de3784f3db2c1a4f
+d22ae9f3ef437a6caff2f21454e6004e4849bdd536aa6397
+111aa54a0b46d0d9c6ef5c2e6761ad4f87f03e9a80eb1f73
+ee22d0be1e22c8ff5e015b7e6b1ce7d56c4cb8708de3fb01
+ee6024d39da9847fa880d67d41df3e8dbcc775fc23d48a2f
+b92749f04dea67f38ae371bdd59e2b34805838372be49692
+ef500411d065beaf96fb7cc87ecced50d39c9a7dcf109d9a
+aaf24cccc048b8b3e1160b9155776cef12a8e148
 ------------------- END KEY --------------------'
   db_type :sw
   cache_db_user 'root'
   cache_db_password 'testing'
   sw_admin_pw 'password'
-  media 'C:\swmedia'
+  media 'D:\swmedia'
 end
 
-supportworks_server 'C:\Program Files (x86)\Hornbill\Supportworks Server' do
+supportworks_server 'D:\Program Files (x86)\Hornbill\Supportworks Server' do
   action :configure
   version '8.2'
   license 'Bittercreek Technology, Inc'
+  media 'D:\swmedia'
+  fqdn true
 end

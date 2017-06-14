@@ -1,0 +1,160 @@
+#####################################################
+##      AUTO-GENERATED FILE. DO NOT EDIT!          ##
+#####################################################
+Alias /sw/clisupp "<%= @server_unix %>/html/clisupp"
+
+Alias /sw/reports "<%= @server_unix %>/html/reports"
+
+Alias /sw/clients "<%= @server_unix %>/clients"
+
+Alias /sw/surveys "<%= @server_unix %>/html/surveys"
+
+Alias /sw/webclient "<%= @server_unix %>/html/webclient"
+
+Alias /sw/xmlmc "<%= @server_unix %>/html/xmlmc"
+
+Alias /sw/php_reports "<%= @server_unix %>/html/php_reports"
+
+Alias /sw/dd "<%= @server_unix %>/data/_dd_data/www"
+
+Alias /sw/kb "<%= @server_unix %>/knowledgebase"
+
+Alias /sw/itg "<%= @server_unix %>/html/integration"
+
+Alias /sw/_dd "<%= @server_unix %>/data/_dd_data"
+
+Alias /sw/analystportal "<%= @server_unix %>/html/analystportal"
+
+Alias /sw/selfservice "<%= @server_unix %>/html/_selfservice/selfservice
+
+Alias /sw "<%= @server_unix %>/docs"
+
+
+
+<Directory "<%= @server_windows %>\clients">
+
+Allow from all
+
+AllowOverride None
+
+Order allow,deny
+
+Options ExecCGI
+
+Require all granted
+
+</Directory>
+
+<Directory "<%= @server_windows %>\html\clisupp">
+
+AllowOverride All
+
+Order allow,deny
+
+Allow from all
+
+Options ExecCGI
+
+Require all granted
+
+</Directory>
+
+<Directory "<%= @server_windows %>\data\_dd_data">
+
+AllowOverride None
+
+Order allow,deny
+
+Allow from all
+
+Options ExecCGI
+
+Require all granted
+
+</Directory>
+
+<Directory "<%= @server_windows %>\docs">
+
+AllowOverride All
+
+Order allow,deny
+
+Allow from all
+
+Options ExecCGI
+
+Require all granted
+
+</Directory>
+
+<Directory "<%= @server_windows %>\html">
+
+AllowOverride None
+
+Order allow,deny
+
+Allow from all
+
+Options ExecCGI
+
+Require all granted
+
+</Directory>
+
+<Directory "<%= @server_windows %>\knowledgebase">
+
+AllowOverride None
+
+Order allow,deny
+
+Allow from all
+
+Options ExecCGI
+
+Require all granted
+
+</Directory>
+
+<Directory "<%= @server_windows %>\scripts">
+
+AllowOverride None
+
+Order Allow,Deny
+
+Allow from all
+
+Options ExecCGI
+
+Require all granted
+
+</Directory>
+
+<Directory "<%= @server_windows %>\html\_selfservice">
+
+AllowOverride All
+
+Order allow,deny
+
+Allow from all
+
+Options ExecCGI
+
+Require all granted
+
+</Directory>
+
+<Directory "<%= @server_windows %>\html\webclient">
+
+AllowOverride All
+
+Order Allow,Deny
+
+Allow from all
+
+Options ExecCGI
+
+Require all granted
+
+</Directory>
+
+

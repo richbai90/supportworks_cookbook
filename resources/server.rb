@@ -7,8 +7,8 @@ property :sw_admin_pw, String, default: 'password'
 property :cache_db_user, String, default: 'root'
 property :cache_db_password, String, default: ''
 property :dsn, String, default: 'swdata'
-property :swdata_db_user, String, default: 'sa'
-property :swdata_db_password, String, default: ''
+property :swdata_db_user, String
+property :swdata_db_password, String
 property :https, [TrueClass, FalseClass], default: true
 property :enhanced_security, [TrueClass, FalseClass], default: false
 property :zapp, String
@@ -18,39 +18,53 @@ default_action :install
 
 action :install do
 
-  template_path=file_join(Chef::Config['file_cache_path'], 'automate_server.ps1')
+  # template_path=file_join(Chef::Config['file_cache_path'], 'automate_server.ps1')
+  #
+  # template template_path do
+  #   source 'server.ps1.erb'
+  #   variables({
+  #                 :lic => license,
+  #                 :install_path => (get_path(get_path(new_resource.path, 'sw', node), 'sw', node)),
+  #                 :db => {type: db_type, user: [cache_db_user, swdata_db_user], pw: [cache_db_password, swdata_db_password]},
+  #                 :admin_pw => sw_admin_pw,
+  #                 :dsn => dsn
+  #             })
+  # end
+  #
+  # execute 'noop' do
+  #   action :nothing
+  # end
+  #
+  # ruby_block 'automate' do
+  #   retries 3
+  #   retry_delay 2
+  #   block { ps_script(template_path) }
+  #   only_if { registry_data_exists?(csreg(node), :name => 'Version', :type => :string, :data => '6.0.0') }
+  #   not_if { registry_key_exists?(swreg(node)) }
+  # end
+  #
+  # windows_package 'ESP' do
+  #   action :install
+  #   source repo_from_version('sw', new_resource.version, new_resource.media)
+  #   installer_type :custom
+  #   only_if { registry_data_exists?(csreg(node), :name => 'Version', :type => :string, :data => '6.0.0') }
+  #   not_if { registry_key_exists?(swreg(node)) }
+  # end
 
-  template template_path do
-    source 'server.ps1.erb'
+  template ::File.join(Chef::Config['file_cache_path'], 'swsqlconfs.sql') do
+    source 'swsqlconfs.sql.erb'
     variables({
-                  :lic => license,
-                  :install_path => (get_path(get_path(new_resource.path, 'sw', node), 'sw', node)),
-                  :db => {type: db_type, user: [cache_db_user, swdata_db_user], pw: [cache_db_password, swdata_db_password]},
-                  :admin_pw => sw_admin_pw,
-                  :dsn => dsn
+        :server => get_path(new_resource.path, 'sw', node).gsub('\\', '/')
               })
+  end
+
+  execute 'ESP' do
+    cwd new_resource.media
+    command "SwSetup.exe -s -var:DefaultAdminPassword=#{sw_admin_pw} -var:InstallPath=\"#{get_path(new_resource.path, 'sw', node)}\" -var:OdbcDSN=\"Supportworks Data\" -var:OdbcUID=#{ swdata_db_user || cache_db_user } -var:OdbcPWD=#{ swdata_db_password || cache_db_password } -var:UseSwDatabase=#{ db_type == :sw ? 1 : 0 } -var:OdbcCacheDSN=\"Supportworks Cache\" -var:OdbcDBName=swdata -var:SystemDBUID=#{cache_db_user} -var:SystemDBPWD=#{cache_db_password} -var:EnableXMLMCDocumentation=1 -var:UseLegacyODBC=1"
   end
 
   execute 'noop' do
     action :nothing
-  end
-
-  ruby_block 'automate' do
-    retries 3
-    retry_delay 2
-    block { ps_script(template_path) }
-  end
-
-  windows_package 'ESP' do
-    action :install
-    source repo_from_version('sw', new_resource.version, new_resource.media)
-    installer_type :custom
-    only_if { registry_data_exists?(csreg(node), :name => 'Version', :type => :string, :data => '6.0.0') }
-    not_if { registry_key_exists?(swgreg(node), :name => 'Supportworks Server')}
-  end
-
-  template ::File.join(Chef::Config['file_cache_path'], 'swsystagfix.sql') do
-    source 'swsystagfix.sql.erb'
   end
 
   mysql_path = registry_get_values("#{csreg(node)}\\Components\\MariaDB").select do |val|
@@ -58,7 +72,15 @@ action :install do
   end[0][:data]
 
   execute 'update.sql' do
-    command "#{::File.join(mysql_path, 'bin', 'mysql.exe')} -u #{cache_db_user} --password=#{cache_db_password} --port 5002 < #{::File.join(Chef::Config['file_cache_path'], 'swsystagfix.sql')}"
+    cwd ::File.join(mysql_path, 'bin')
+    command "mysql -u #{swdata_db_user || cache_db_user} --password=#{swdata_db_password || cache_db_password} --port 5002 < \"#{::File.join(Chef::Config['file_cache_path'], 'swsqlconfs.sql')}\""
+    ignore_failure true
+  end
+
+  ruby_block 'license server' do
+    block do
+      license_server(get_path(new_resource.path, 'sw', node), new_resource.license)
+    end
   end
 
   service 'SwServerService' do
@@ -87,10 +109,14 @@ action :configure do
   end
 
   if zapp.nil?
-    remote_file ::File.join(Chef::Config['file_cache_path'], zapp_version(version)) do
-      source zapp_from_repo(version)
+    if media.nil?
+      remote_file ::File.join(Chef::Config['file_cache_path'], zapp_version(version)) do
+        source zapp_from_repo(version, media)
+      end
+      zapp = ::File.join(Chef::Config['file_cache_path'], zapp_version(version))
+    else
+      zapp = zapp_from_repo(version, media)
     end
-    zapp = ::File.join(Chef::Config['file_cache_path'], zapp_version(version))
   else
     if is_uri(zapp)
       remote_file ::File.join(Chef::Config['file_cache_path'], zapp_version(version)) do
@@ -109,10 +135,11 @@ action :configure do
   end
 
   execute 'install_itsm_default' do
-    command ::File.join(get_path(get_path(new_resource.path, 'sw', node), 'sw', node), 'bin', 'swappinstall.exe') + " -appinstall \"#{zapp}\""
+    cwd ::File.join(get_path(new_resource.path, 'sw', node), 'bin')
+    command "swappinstall.exe -appinstall \"#{zapp}\""
   end
 
-  template ::File.join(get_path(get_path(new_resource.path, 'sw', node), 'sw', node), 'clients', 'client.setup.bat') do
+  template ::File.join(get_path(new_resource.path, 'sw', node), 'clients', 'client.setup.bat') do
     source 'client.setup.bat.erb'
     variables({
                   :version => pad_version(new_resource.version),
@@ -120,7 +147,7 @@ action :configure do
               })
   end
 
-  template ::File.join(get_path(get_path(new_resource.path, 'sw', node), 'sw', node), 'docs', 'software', 'index.php') do
+  template ::File.join(get_path(new_resource.path, 'sw', node), 'docs', 'software', 'index.php') do
     source 'client_install.php.erb'
   end
 
@@ -134,13 +161,13 @@ action :configure do
 
   ruby_block 'copy selfservice template' do
     temp_path = ::File.join(get_path(new_resource.path, 'sw', node), 'html', '_selfservice', '_itsm_default_v2_template')
-    new_path = ::File.join(get_path(get_path(new_resource.path, 'sw', node), 'sw', node), 'html', '_selfservice', 'selfservice')
+    new_path = ::File.join(get_path(new_resource.path, 'sw', node), 'html', '_selfservice', 'selfservice')
     block do
       if ::File.exist?(new_path) do
         delete(new_path)
       end
         ::FileUtils.mkdir_p new_path
-        ::FileUtils.cp_r(Dir["#{temp_path}/**/*"], new_path)
+        ::FileUtils.cp_r(temp_path, new_path)
       end
     end
   end
@@ -151,6 +178,20 @@ action :configure do
                   :enhanced_security => new_resource.enhanced_security
               })
   end
+
+  apache_path = registry_get_values("#{csreg(node)}\\Components\\Apache").select do |val|
+    val[:name] == 'InstallPath'
+  end[0][:data]
+
+  template ::File.join(apache_path, 'conf', 'cs', 'apps', '501_sw_aliases.conf') do
+    server_path = get_path(new_resource.path, 'sw', node)
+    variables({
+                  :server_unix => server_path.gsub('\\', '/'),
+                  :server_windows => server_path.gsub('/', '\\')
+              })
+  end
+
+  
 
 end
 

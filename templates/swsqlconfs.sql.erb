@@ -1,0 +1,118 @@
+-- MySQL dump 10.15  Distrib 10.0.15-MariaDB, for Win32 (x86)
+--
+-- Host: localhost    Database: sw_systemdb
+-- ------------------------------------------------------
+-- Server version	10.0.15-MariaDB-log
+
+USE sw_systemdb;
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES latin1 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Dumping data for table `swanalysts`
+--
+-- WHERE:  analystid='CONFIGURE'
+
+LOCK TABLES `swanalysts` WRITE;
+/*!40000 ALTER TABLE `swanalysts` DISABLE KEYS */;
+INSERT INTO `swanalysts` VALUES ('CONFIGURE','Configure User','',1,'SUPPORT','','','','','','','','',3,4294721535,191,522174463,266333759,16127,15,0,0,64767,0,'GMT Standard Time','ITSM_Default',0,'','0','English (British)','yyyy-MM-dd HH:mm:ss','yyyy-MM-dd','HH:mm:ss','£',0,'','','','','','','','','2017-06-14 08:51:28');
+/*!40000 ALTER TABLE `swanalysts` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Dumping data for table `swanalysts_groups`
+--
+-- WHERE:  analystid='CONFIGURE'
+
+LOCK TABLES `swanalysts_groups` WRITE;
+/*!40000 ALTER TABLE `swanalysts_groups` DISABLE KEYS */;
+INSERT INTO `swanalysts_groups` VALUES ('CONFIGURE','SUPPORT');
+/*!40000 ALTER TABLE `swanalysts_groups` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Dumping data for table `swanalysts_apprights`
+--
+-- WHERE:  analystid='CONFIGURE'
+
+LOCK TABLES `swanalysts_apprights` WRITE;
+/*!40000 ALTER TABLE `swanalysts_apprights` DISABLE KEYS */;
+INSERT INTO `swanalysts_apprights` VALUES ('CONFIGURE','Default',255,15,15,31,0,0,0,0),('CONFIGURE','ITSM_Default',287,4095,1023,65407,63,255,127,32671);
+/*!40000 ALTER TABLE `swanalysts_apprights` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Dumping data for table `swanalysts_libres`
+--
+-- WHERE:  analystid='CONFIGURE'
+
+LOCK TABLES `swanalysts_libres` WRITE;
+/*!40000 ALTER TABLE `swanalysts_libres` DISABLE KEYS */;
+INSERT INTO `swanalysts_libres` VALUES ('CONFIGURE','My Personal Library','<%= @server %>/data/_lib_users/CONFIGURE',4294967295,0),('CONFIGURE','My Teams Library','<%= @server %>/data/_lib_groups/SUPPORT',4294967295,0),('CONFIGURE','System Administration/Log Files','<%= @server %>/log',4294967295,0),('CONFIGURE','System Administration/Archived Log Files','<%= @server %>/logarchive',4294967295,0),('CONFIGURE','System Administration/Data Dictionaries','<%= @server %>/data/_dd_data',4294967295,0),('CONFIGURE','System Administration/Server-Side Scripts','<%= @server %>/scripts',4294967295,0),('CONFIGURE','System Administration/KnowledgeBase Document Folder','<%= @server %>/KnowledgeBase',4294967295,0),('CONFIGURE','System Administration/AutoMaster Drop Folder','<%= @server %>/automast',4294967295,0);
+/*!40000 ALTER TABLE `swanalysts_libres` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Dumping data for table `swanalysts_locks`
+--
+-- WHERE:  analystid='CONFIGURE'
+
+LOCK TABLES `swanalysts_locks` WRITE;
+/*!40000 ALTER TABLE `swanalysts_locks` DISABLE KEYS */;
+/*!40000 ALTER TABLE `swanalysts_locks` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Dumping data for table `swanalysts_profiles`
+--
+-- WHERE:  analystid='CONFIGURE'
+
+LOCK TABLES `swanalysts_profiles` WRITE;
+/*!40000 ALTER TABLE `swanalysts_profiles` DISABLE KEYS */;
+INSERT INTO `swanalysts_profiles` VALUES ('CONFIGURE','All Cache Database Rights');
+/*!40000 ALTER TABLE `swanalysts_profiles` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Dumping data for table `swanalysts_settings`
+--
+-- WHERE:  analystid='CONFIGURE'
+
+LOCK TABLES `swanalysts_settings` WRITE;
+/*!40000 ALTER TABLE `swanalysts_settings` DISABLE KEYS */;
+/*!40000 ALTER TABLE `swanalysts_settings` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Dumping data for table `swanalysts_userres`
+--
+-- WHERE:  analystid='CONFIGURE'
+
+LOCK TABLES `swanalysts_userres` WRITE;
+/*!40000 ALTER TABLE `swanalysts_userres` DISABLE KEYS */;
+/*!40000 ALTER TABLE `swanalysts_userres` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2017-06-14 10:54:27
+
+UPDATE `swsecurityprofiles_tablerights_cache` SET rights = 31;
+
+USE swdata;
+
+DROP TABLE `swsystag`;

@@ -2,6 +2,8 @@ module Supportworks
   module Helpers
     extend self
 
+    require 'nokogiri'
+
     def csreg(node)
       case node['kernel']['machine']
         when 'i386'
@@ -10,6 +12,17 @@ module Supportworks
           'HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432NODE\HORNBILL\CORE SERVICES'
         else
           'HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432NODE\HORNBILL\CORE SERVICES'
+      end
+    end
+
+    def swreg(node)
+      case node['kernel']['machine']
+        when 'i386'
+          'HKEY_LOCAL_MACHINE\SOFTWARE\HORNBILL\SUPPORTWORKS SERVER'
+        when 'x86_64'
+          'HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432NODE\HORNBILL\SUPPORTWORKS SERVER'
+        else
+          'HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432NODE\HORNBILL\SUPPORTWORKS SERVER'
       end
     end
 
@@ -133,12 +146,21 @@ module Supportworks
       /\A#{URI::regexp}\z/ =~ str ? true : false
     end
 
-    def zapp_from_repo(version)
+    def zapp_from_repo(version, media)
+      unless media.nil?
+        return File.join(media, zapp_version(version))
+      end
       "https://github.com/richbai90/BTI_Zapps/blob/master/#{zapp_version(version)}?raw=true"
     end
 
     def get_path(path, which, node)
       (path.to_s == 'default') ? install_path(which, node) : path
+    end
+
+    def license_server(path, license)
+      File.open(*Dir[File.join(path,'*.lic').gsub!('\\', '/')], 'wb') do |f|
+        f.write(license)
+      end
     end
 
   end
