@@ -6,7 +6,7 @@ property :db_type, Symbol, default: :sw
 property :sw_admin_pw, String, default: 'password'
 property :cache_db_user, String, default: 'root'
 property :cache_db_password, String, default: ''
-property :dsn, String, default: 'swdata'
+property :db, String, default: 'swdata'
 property :swdata_db_user, String
 property :swdata_db_password, String
 property :https, [TrueClass, FalseClass], default: true
@@ -134,9 +134,17 @@ action :configure do
     command ::File.join(Chef::Config['file_cache_path'], 'ZappUtility.exe') + " '#{zapp}' -l '#{license}'"
   end
 
-  execute 'install_itsm_default' do
-    cwd ::File.join(get_path(new_resource.path, 'sw', node), 'bin')
-    command "swappinstall.exe -appinstall \"#{zapp}\""
+  ruby_block 'install_itsm_default' do
+    # cwd ::File.join(get_path(new_resource.path, 'sw', node), 'bin')
+    # command "swappinstall.exe -appinstall \"#{zapp}\""
+    install_zapp(get_path(new_resource.path, 'sw', node).gsub('\\', '/'), zapp)
+  end
+
+  execute 'update_schema' do
+    swpath = get_path(new_resource.path, 'sw', node)
+    cwd ::File.join(swpath, 'bin')
+    # todo verify this command
+    command "swdbconfig.exe -tdb #{db} -application SupportworksServerService \"#{::File.join(swpath, 'idata', 'itsm', 'dbschema.xml')}\" -cuid #{swdata_db_user || cache_db_user} -cpwd #{swdata_db_password || cache_db_password} "
   end
 
   template ::File.join(get_path(new_resource.path, 'sw', node), 'clients', 'client.setup.bat') do
