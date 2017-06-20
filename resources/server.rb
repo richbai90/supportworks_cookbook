@@ -144,7 +144,7 @@ action :configure do
     swpath = get_path(new_resource.path, 'sw', node)
     cwd ::File.join(swpath, 'bin')
     # todo verify this command
-    command "swdbconfig.exe -tdb #{db} -application SupportworksServerService \"#{::File.join(swpath, 'idata', 'itsm', 'dbschema.xml')}\" -cuid #{swdata_db_user || cache_db_user} -cpwd #{swdata_db_password || cache_db_password} "
+    command "swdbconfig.exe -import \"#{::File.join(swpath, 'idata', 'itsm', 'dbschema.xml')}\"  -tdb #{db} -cuid #{swdata_db_user || cache_db_user} -cpwd #{swdata_db_password || cache_db_password} "
   end
 
   template ::File.join(get_path(new_resource.path, 'sw', node), 'clients', 'client.setup.bat') do
