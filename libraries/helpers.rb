@@ -1,3 +1,6 @@
+$:.unshift *Dir[File.expand_path('../../files/default/vendor/gems/**/lib', __FILE__)]
+require 'zip'
+
 module Supportworks
   module Helpers
     extend self
@@ -163,6 +166,28 @@ module Supportworks
       end
     end
 
+    def install_zapp(basepath, zapp)
+      Zip::File.open(zapp) do |_zapp|
+        _zapp.each do |entry|
+          itsm_name = entry.name.gsub('\\','/').gsub('itsm_default', 'itsm').gsub('ITSM_Default', 'ITSM')
+          default_name = entry.name.gsub('\\','/')
+          itsm_fullpath = File.join(basepath, itsm_name)
+          default_fullpath = File.join(basepath, default_name)
+          itsm_dir = File.dirname(itsm_fullpath)
+          default_dir = File.dirname(default_fullpath)
+          FileUtils::mkdir_p(itsm_dir)
+          FileUtils::mkdir_p(default_dir)
+          File.open(itsm_fullpath, 'w') do |f|
+            f.write(entry.get_input_stream.read)
+          end
+          File.open(default_fullpath, 'w') do |f|
+            f.write(entry.get_input_stream.read)
+          end
+        end
+      end
+    end
+
   end
 
 end
+
