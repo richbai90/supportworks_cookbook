@@ -13,6 +13,7 @@ property :https, [TrueClass, FalseClass], default: true
 property :enhanced_security, [TrueClass, FalseClass], default: false
 property :zapp, String
 property :fqdn, [TrueClass, FalseClass], default: false
+property :skip_esp_for_testing, [TrueClass, FalseClass], default: false
 
 default_action :install
 
@@ -61,6 +62,7 @@ action :install do
   execute 'ESP' do
     cwd new_resource.media
     command "SwSetup.exe -s -var:DefaultAdminPassword=#{sw_admin_pw} -var:InstallPath=\"#{get_path(new_resource.path, 'sw', node)}\" -var:OdbcDSN=\"Supportworks Data\" -var:OdbcUID=#{ swdata_db_user || cache_db_user } -var:OdbcPWD=#{ swdata_db_password || cache_db_password } -var:UseSwDatabase=#{ db_type == :sw ? 1 : 0 } -var:OdbcCacheDSN=\"Supportworks Cache\" -var:OdbcDBName=swdata -var:SystemDBUID=#{cache_db_user} -var:SystemDBPWD=#{cache_db_password} -var:EnableXMLMCDocumentation=1 -var:UseLegacyODBC=1"
+    not_if skip_esp_for_testing
   end
 
   execute 'noop' do
@@ -177,6 +179,7 @@ action :configure do
     temp_path = ::File.join(get_path(new_resource.path, 'sw', node), 'html', '_selfservice', '_itsm_default_v2_template')
     new_path = ::File.join(get_path(new_resource.path, 'sw', node), 'html', '_selfservice', 'selfservice')
     block do
+      require('fileutils')
       if ::File.exist?(new_path) do
         FileUtils.rm_rf(new_path)
       end

@@ -167,6 +167,7 @@ module Supportworks
     end
 
     def precopy_itsm(basepath)
+      require('fileutils')
 	  files = Dir[basepath.gsub('\\','/') + '/**/*'].select do |file|
       	  !( (file =~ /\/itsm_default\/|\/ITSM_Default\//).nil? || File.directory?(file) )
 	  end
