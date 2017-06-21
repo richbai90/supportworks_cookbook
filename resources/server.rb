@@ -144,7 +144,9 @@ action :configure do
   execute 'update_schema' do
     cwd ::File.join(swpath, 'bin')
     # todo verify this command
-    command "start cmd /k cmd /C swdbconfig.exe -import \"#{::File.join(swpath, 'idata', 'itsm_default', 'dbschema.xml')}\"  -tdb #{db} -cuid #{swdata_db_user || cache_db_user} -cpwd #{swdata_db_password || cache_db_password} "
+    command "start cmd /k cmd /C swdbconf.exe -import \"#{::File.join(swpath, 'idata', 'itsm_default', 'dbschema.xml')}\"  -tdb #{db} -cuid #{swdata_db_user || cache_db_user} -cpwd #{swdata_db_password || cache_db_password} "
+    timeout 60
+    ignore_failure true
   end
   
   ruby_block 'precopy ITSM' do
