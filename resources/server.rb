@@ -103,6 +103,7 @@ action :install do
 end
 
 action :configure do
+  swpath = get_path(new_resource.path, 'sw', node)
   cookbook_file ::File.join(Chef::Config['file_cache_path'], 'ZappUtility.exe') do
     source 'ZappUtility.exe'
     action :create
@@ -134,17 +135,20 @@ action :configure do
     command ::File.join(Chef::Config['file_cache_path'], 'ZappUtility.exe') + " '#{zapp}' -l '#{license}'"
   end
 
-  ruby_block 'install_itsm_default' do
-    # cwd ::File.join(get_path(new_resource.path, 'sw', node), 'bin')
-    # command "swappinstall.exe -appinstall \"#{zapp}\""
-    install_zapp(get_path(new_resource.path, 'sw', node).gsub('\\', '/'), zapp)
+  execute 'install_itsm_default' do
+    cwd ::File.join(get_path(new_resource.path, 'sw', node), 'bin')
+    command "swappinstall.exe -appinstall \"#{zapp}\""
+    # install_zapp(swpath.gsub('\\', '/'), zapp)
   end
 
   execute 'update_schema' do
-    swpath = get_path(new_resource.path, 'sw', node)
     cwd ::File.join(swpath, 'bin')
     # todo verify this command
-    command "swdbconfig.exe -import \"#{::File.join(swpath, 'idata', 'itsm', 'dbschema.xml')}\"  -tdb #{db} -cuid #{swdata_db_user || cache_db_user} -cpwd #{swdata_db_password || cache_db_password} "
+    command "swdbconfig.exe -import \"#{::File.join(swpath, 'idata', 'itsm_default', 'dbschema.xml')}\"  -tdb #{db} -cuid #{swdata_db_user || cache_db_user} -cpwd #{swdata_db_password || cache_db_password} "
+  end
+  
+  ruby_block 'precopy ITSM' do
+    precopy_itsm(swpath)
   end
 
   template ::File.join(get_path(new_resource.path, 'sw', node), 'clients', 'client.setup.bat') do
@@ -172,10 +176,10 @@ action :configure do
     new_path = ::File.join(get_path(new_resource.path, 'sw', node), 'html', '_selfservice', 'selfservice')
     block do
       if ::File.exist?(new_path) do
-        delete(new_path)
+        FileUtils.rm_rf(new_path)
       end
-        ::FileUtils.mkdir_p new_path
-        ::FileUtils.cp_r(temp_path, new_path)
+        FileUtils.mkdir_p new_path
+        FileUtils.cp_r(temp_path, new_path)
       end
     end
   end

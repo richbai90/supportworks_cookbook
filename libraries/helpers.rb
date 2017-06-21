@@ -166,25 +166,20 @@ module Supportworks
       end
     end
 
-    def install_zapp(basepath, zapp)
-      Zip::File.open(zapp) do |_zapp|
-        _zapp.each do |entry|
-          itsm_name = entry.name.gsub('\\','/').gsub('itsm_default', 'itsm').gsub('ITSM_Default', 'ITSM')
-          default_name = entry.name.gsub('\\','/')
-          itsm_fullpath = File.join(basepath, itsm_name)
-          default_fullpath = File.join(basepath, default_name)
-          itsm_dir = File.dirname(itsm_fullpath)
-          default_dir = File.dirname(default_fullpath)
-          FileUtils::mkdir_p(itsm_dir)
-          FileUtils::mkdir_p(default_dir)
-          File.open(itsm_fullpath, 'w') do |f|
-            f.write(entry.get_input_stream.read)
-          end
-          File.open(default_fullpath, 'w') do |f|
-            f.write(entry.get_input_stream.read)
-          end
-        end
-      end
+    def precopy_itsm(basepath)
+	  files = Dir[basepath.gsub('\\','/') + '/**/*'].select do |file|
+      	  !( (file =~ /\/itsm_default\/|\/ITSM_Default\//).nil? || File.directory?(file) )
+	  end
+	  
+	 itsm_files = files.map do |file|
+        file.gsub('itsm_default', 'itsm').gsub('ITSM_Default', 'ITSM')	  
+	  end
+	  
+	  itsm_files.each_with_index do |file, i|
+	    FileUtils.mkdir_p File.dirname(file)
+		FileUtils.cp(files[i], file)
+	  end
+	  nil
     end
 
   end
