@@ -115,4 +115,4 @@ UPDATE `swsecurityprofiles_tablerights_cache` SET rights = 31;
 
 USE swdata;
 
-DROP TABLE `swsystag`;
+UPDATE swsystag set systemid = '<%= @systag %>';

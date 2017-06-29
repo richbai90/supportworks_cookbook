@@ -13,6 +13,7 @@ property :https, [TrueClass, FalseClass], default: true
 property :enhanced_security, [TrueClass, FalseClass], default: false
 property :zapp, String
 property :fqdn, [TrueClass, FalseClass], default: false
+property :skip_esp_for_testing, [TrueClass, FalseClass], default: false
 
 default_action :install
 
@@ -61,20 +62,25 @@ action :install do
   execute 'ESP' do
     cwd new_resource.media
     command "SwSetup.exe -s -var:DefaultAdminPassword=#{sw_admin_pw} -var:InstallPath=\"#{get_path(new_resource.path, 'sw', node)}\" -var:OdbcDSN=\"Supportworks Data\" -var:OdbcUID=#{ swdata_db_user || cache_db_user } -var:OdbcPWD=#{ swdata_db_password || cache_db_password } -var:UseSwDatabase=#{ db_type == :sw ? 1 : 0 } -var:OdbcCacheDSN=\"Supportworks Cache\" -var:OdbcDBName=swdata -var:SystemDBUID=#{cache_db_user} -var:SystemDBPWD=#{cache_db_password} -var:EnableXMLMCDocumentation=1 -var:UseLegacyODBC=1"
-  end
-
-  execute 'noop' do
-    action :nothing
+    not_if { skip_esp_for_testing }
   end
 
   mysql_path = registry_get_values("#{csreg(node)}\\Components\\MariaDB").select do |val|
     val[:name] == 'InstallPath'
   end[0][:data]
 
-  execute 'update.sql' do
+    template ::File.join(Chef::Config['file_cache_path'], 'swsqlconfs.sql') do
+    source 'swsqlconfs.sql.erb'
+    variables({
+        :server => get_path(new_resource.path, 'sw', node).gsub('\\', '/'),
+		:systag => get_sysid(new_resource.path, 'sw', node)
+              })
+  end
+  
+  execute 'swqlconfs.sql' do
     cwd ::File.join(mysql_path, 'bin')
-    command "mysql -u #{swdata_db_user || cache_db_user} --password=#{swdata_db_password || cache_db_password} --port 5002 < \"#{::File.join(Chef::Config['file_cache_path'], 'swsqlconfs.sql')}\""
-    ignore_failure true
+    command "mysql -f -u #{swdata_db_user || cache_db_user} --password=#{swdata_db_password || cache_db_password} --port 5002 < \"#{::File.join(Chef::Config['file_cache_path'], 'swsqlconfs.sql')}\""
+    ignore_failure false
   end
 
   ruby_block 'license server' do
@@ -103,6 +109,7 @@ action :install do
 end
 
 action :configure do
+  swpath = get_path(new_resource.path, 'sw', node)
   cookbook_file ::File.join(Chef::Config['file_cache_path'], 'ZappUtility.exe') do
     source 'ZappUtility.exe'
     action :create
@@ -134,17 +141,14 @@ action :configure do
     command ::File.join(Chef::Config['file_cache_path'], 'ZappUtility.exe') + " '#{zapp}' -l '#{license}'"
   end
 
-  ruby_block 'install_itsm_default' do
-    # cwd ::File.join(get_path(new_resource.path, 'sw', node), 'bin')
-    # command "swappinstall.exe -appinstall \"#{zapp}\""
-    install_zapp(get_path(new_resource.path, 'sw', node).gsub('\\', '/'), zapp)
+  execute 'install_itsm_default' do
+    cwd ::File.join(get_path(new_resource.path, 'sw', node), 'bin')
+    command "swappinstall.exe -appinstall \"#{zapp}\""
+    # install_zapp(swpath.gsub('\\', '/'), zapp)
   end
-
-  execute 'update_schema' do
-    swpath = get_path(new_resource.path, 'sw', node)
-    cwd ::File.join(swpath, 'bin')
-    # todo verify this command
-    command "swdbconfig.exe -import \"#{::File.join(swpath, 'idata', 'itsm', 'dbschema.xml')}\"  -tdb #{db} -cuid #{swdata_db_user || cache_db_user} -cpwd #{swdata_db_password || cache_db_password} "
+  
+  ruby_block 'precopy ITSM' do
+    block { precopy_itsm(swpath) }
   end
 
   template ::File.join(get_path(new_resource.path, 'sw', node), 'clients', 'client.setup.bat') do
@@ -171,11 +175,12 @@ action :configure do
     temp_path = ::File.join(get_path(new_resource.path, 'sw', node), 'html', '_selfservice', '_itsm_default_v2_template')
     new_path = ::File.join(get_path(new_resource.path, 'sw', node), 'html', '_selfservice', 'selfservice')
     block do
+      require('fileutils')
       if ::File.exist?(new_path) do
-        delete(new_path)
+        FileUtils.rm_rf(new_path)
       end
-        ::FileUtils.mkdir_p new_path
-        ::FileUtils.cp_r(temp_path, new_path)
+        FileUtils.mkdir_p new_path
+        FileUtils.cp_r(temp_path, new_path)
       end
     end
   end
