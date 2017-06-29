@@ -5,7 +5,7 @@ Installs and configures Supportworks >= 8.1
 ## Requirements
 
 - Create a mysql user on your current production server to use as the migration account
-   - ```GRANT SELECT, SHOW VIEW on *.* TO 'migrate'@'<new server ip> IDENTIFIED BY 'password'```
+   - ```GRANT SELECT, SHOW VIEW on *.* TO 'migrate'@'<new server ip>' IDENTIFIED BY 'password'```
 - Download the required installation media and save it to D:\swmedia
   - CsSetup.msi: https://files.hornbill.com/coreservices/R_CS_6_0_0/CsSetup.msi
   - SwSetup.exe: https://files.hornbill.com/supportworks/R_SW_8_2_0/SwSetup.exe
