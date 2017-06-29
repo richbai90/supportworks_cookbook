@@ -62,21 +62,25 @@ action :install do
   execute 'ESP' do
     cwd new_resource.media
     command "SwSetup.exe -s -var:DefaultAdminPassword=#{sw_admin_pw} -var:InstallPath=\"#{get_path(new_resource.path, 'sw', node)}\" -var:OdbcDSN=\"Supportworks Data\" -var:OdbcUID=#{ swdata_db_user || cache_db_user } -var:OdbcPWD=#{ swdata_db_password || cache_db_password } -var:UseSwDatabase=#{ db_type == :sw ? 1 : 0 } -var:OdbcCacheDSN=\"Supportworks Cache\" -var:OdbcDBName=swdata -var:SystemDBUID=#{cache_db_user} -var:SystemDBPWD=#{cache_db_password} -var:EnableXMLMCDocumentation=1 -var:UseLegacyODBC=1"
-    not_if skip_esp_for_testing
-  end
-
-  execute 'noop' do
-    action :nothing
+    not_if { skip_esp_for_testing }
   end
 
   mysql_path = registry_get_values("#{csreg(node)}\\Components\\MariaDB").select do |val|
     val[:name] == 'InstallPath'
   end[0][:data]
 
-  execute 'update.sql' do
+    template ::File.join(Chef::Config['file_cache_path'], 'swsqlconfs.sql') do
+    source 'swsqlconfs.sql.erb'
+    variables({
+        :server => get_path(new_resource.path, 'sw', node).gsub('\\', '/'),
+		:systag => get_sysid(new_resource.path, 'sw', node)
+              })
+  end
+  
+  execute 'swqlconfs.sql' do
     cwd ::File.join(mysql_path, 'bin')
-    command "mysql -u #{swdata_db_user || cache_db_user} --password=#{swdata_db_password || cache_db_password} --port 5002 < \"#{::File.join(Chef::Config['file_cache_path'], 'swsqlconfs.sql')}\""
-    ignore_failure true
+    command "mysql -f -u #{swdata_db_user || cache_db_user} --password=#{swdata_db_password || cache_db_password} --port 5002 < \"#{::File.join(Chef::Config['file_cache_path'], 'swsqlconfs.sql')}\""
+    ignore_failure false
   end
 
   ruby_block 'license server' do
@@ -142,17 +146,9 @@ action :configure do
     command "swappinstall.exe -appinstall \"#{zapp}\""
     # install_zapp(swpath.gsub('\\', '/'), zapp)
   end
-
-  execute 'update_schema' do
-    cwd ::File.join(swpath, 'bin')
-    # todo verify this command
-    command "start cmd /k cmd /C swdbconf.exe -import \"#{::File.join(swpath, 'idata', 'itsm_default', 'dbschema.xml')}\"  -tdb #{db} -cuid #{swdata_db_user || cache_db_user} -cpwd #{swdata_db_password || cache_db_password} "
-    timeout 60
-    ignore_failure true
-  end
   
   ruby_block 'precopy ITSM' do
-    precopy_itsm(swpath)
+    block { precopy_itsm(swpath) }
   end
 
   template ::File.join(get_path(new_resource.path, 'sw', node), 'clients', 'client.setup.bat') do

@@ -165,6 +165,11 @@ module Supportworks
         f.write(license)
       end
     end
+	
+	def get_sysid(path, which, node)
+	  path = get_path(path, which,node)
+	  File.basename(*Dir[File.join(path,'*.lic').gsub('\\', '/')]).split('.')[0]
+	end
 
     def precopy_itsm(basepath)
       require('fileutils')
