@@ -23,6 +23,13 @@ supportworks_migrate '192.168.1.109' do
   swdata_dsn 'Supportworks Data' #default
 end
 
+supportworks_core_services 'cs' do
+  path 'C:\Program Files (x86)\Hornbill\Core Services'
+  root_pw 'testing'
+  version '6.0'
+  media 'C:\swmedia'
+end
+
 supportworks_server 'C:\Program Files (x86)\Hornbill\Supportworks Server' do
   action :install
   version '8.2'
@@ -42,7 +49,7 @@ c32ffd4808215ee2039b8aef3f2148b7821452f6
   cache_db_password 'testing'
   sw_admin_pw 'password'
   media 'C:\swmedia'
-  skip_esp_for_testing true
+  skip_esp_for_testing false
 end
 
 supportworks_server 'C:\Program Files (x86)\Hornbill\Supportworks Server' do
