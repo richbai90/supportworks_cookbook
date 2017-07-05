@@ -23,8 +23,7 @@ action :install do
     action :install
     # checksum checksum_from_version('cs', new_resource.version)
     source repo_from_version('cs', new_resource.version, new_resource.media)
-    options create_option_string(:INSTALLDIR => path)
-    not_if { registry_key_exists?(csreg(node)) }
+    options create_option_string(:fa => nil, :INSTALLDIR => path)
   end
   
   registry_key 'HKEY_LOCAL_MACHINE\SOFTWARE\ODBC\ODBC.INI\Supportworks Cache' do

@@ -104,9 +104,11 @@ module Supportworks
     def create_option_string(args = {})
       options = ''
       args.each do |key, val|
-        unless val.nil?
+        if val.nil?
+		  options += "/#{key} "
+	    else
           if val.is_a? Numeric
-            options += "#{key}=#{val}"
+            options += "#{key}=#{val} "
           else
             options += "#{key}=\"#{val}\" "
           end

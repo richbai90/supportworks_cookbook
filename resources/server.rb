@@ -52,41 +52,40 @@ action :install do
   #   not_if { registry_key_exists?(swreg(node)) }
   # end
 
-  template ::File.join(Chef::Config['file_cache_path'], 'swsqlconfs.sql') do
-    source 'swsqlconfs.sql.erb'
-    variables({
-        :server => get_path(new_resource.path, 'sw', node).gsub('\\', '/')
-              })
-  end
-
-  execute 'ESP' do
-    cwd new_resource.media
-    command "SwSetup.exe -s -var:DefaultAdminPassword=#{sw_admin_pw} -var:InstallPath=\"#{get_path(new_resource.path, 'sw', node)}\" -var:OdbcDSN=\"Supportworks Data\" -var:OdbcUID=#{ swdata_db_user || cache_db_user } -var:OdbcPWD=#{ swdata_db_password || cache_db_password } -var:UseSwDatabase=#{ db_type == :sw ? 1 : 0 } -var:OdbcCacheDSN=\"Supportworks Cache\" -var:OdbcDBName=swdata -var:SystemDBUID=#{cache_db_user} -var:SystemDBPWD=#{cache_db_password} -var:EnableXMLMCDocumentation=1 -var:UseLegacyODBC=1"
-    not_if { skip_esp_for_testing }
-  end
-
   mysql_path = registry_get_values("#{csreg(node)}\\Components\\MariaDB").select do |val|
     val[:name] == 'InstallPath'
   end[0][:data]
+  
+  execute 'install_ESP' do
+    cwd new_resource.media
+    command "SwSetup.exe -s -var:DefaultAdminPassword=#{sw_admin_pw} -var:InstallPath=\"#{get_path(new_resource.path, 'sw', node)}\" -var:OdbcDSN=\"Supportworks Data\" -var:OdbcUID=#{ swdata_db_user || cache_db_user } -var:OdbcPWD=#{ swdata_db_password || cache_db_password } -var:UseSwDatabase=#{ db_type == :sw ? 1 : 0 } -var:OdbcCacheDSN=\"Supportworks Cache\" -var:OdbcDBName=swdata -var:SystemDBUID=#{cache_db_user} -var:SystemDBPWD=#{cache_db_password} -var:EnableXMLMCDocumentation=1 -var:UseLegacyODBC=1"
+    not_if { skip_esp_for_testing }
+	notifies :run, 'template[sql_configuration]', :delayed
+  end
 
-    template ::File.join(Chef::Config['file_cache_path'], 'swsqlconfs.sql') do
+  template 'sql_configuration' do
+	path ::File.join(Chef::Config['file_cache_path'], 'swsqlconfs.sql')
     source 'swsqlconfs.sql.erb'
     variables({
         :server => get_path(new_resource.path, 'sw', node).gsub('\\', '/'),
-		:systag => get_sysid(new_resource.path, 'sw', node)
+		:systag => '::SYSTAG::'
               })
+    action :nothing #wait until I tell you!
+  end
+  
+  ruby_block 'license server' do
+    block do
+      license_server(get_path(new_resource.path, 'sw', node), new_resource.license)
+	  file = Chef::Util::FileEdit.new(Chef::Config['file_cache_path'], 'swsqlconfs.sql')
+	  file.search_file_replace(/::SYSTAG::/, get_sysid(new_resource.path, 'sw', node))
+      file.write_file
+    end
   end
   
   execute 'swqlconfs.sql' do
     cwd ::File.join(mysql_path, 'bin')
     command "mysql -f -u #{swdata_db_user || cache_db_user} --password=#{swdata_db_password || cache_db_password} --port 5002 < \"#{::File.join(Chef::Config['file_cache_path'], 'swsqlconfs.sql')}\""
     ignore_failure false
-  end
-
-  ruby_block 'license server' do
-    block do
-      license_server(get_path(new_resource.path, 'sw', node), new_resource.license)
-    end
   end
 
   service 'SwServerService' do
@@ -99,6 +98,26 @@ action :install do
 
   service 'SwMailSchedule' do
     action :start
+  end
+  
+  service 'SwCalendarService' do
+	action :start
+  end
+  
+  service 'SwFileService' do
+	action :start
+  end
+  
+  service 'SwMessengerService' do
+	action :start
+  end
+  
+  service 'SwLogService' do
+	action :start
+  end
+  
+  service 'SwSchedulerService' do
+	action :start
   end
 
   windows_package 'client' do
@@ -204,6 +223,37 @@ action :configure do
               })
   end
 
+    service 'SwServerService' do
+    action :start
+  end
+
+  service 'SwMailService' do
+    action :start
+  end
+
+  service 'SwMailSchedule' do
+    action :start
+  end
+  
+  service 'SwCalendarService' do
+	action :start
+  end
+  
+  service 'SwFileService' do
+	action :start
+  end
+  
+  service 'SwMessengerService' do
+	action :start
+  end
+  
+  service 'SwLogService' do
+	action :start
+  end
+  
+  service 'SwSchedulerService' do
+	action :start
+  end
   
 
 end
