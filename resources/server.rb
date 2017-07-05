@@ -14,6 +14,7 @@ property :enhanced_security, [TrueClass, FalseClass], default: false
 property :zapp, String
 property :fqdn, [TrueClass, FalseClass], default: false
 property :skip_esp_for_testing, [TrueClass, FalseClass], default: false
+property :debug_webclient, [TrueClass, FalseClass], default: true
 
 default_action :install
 
@@ -55,33 +56,31 @@ action :install do
   mysql_path = registry_get_values("#{csreg(node)}\\Components\\MariaDB").select do |val|
     val[:name] == 'InstallPath'
   end[0][:data]
-  
+
   execute 'install_ESP' do
     cwd new_resource.media
     command "SwSetup.exe -s -var:DefaultAdminPassword=#{sw_admin_pw} -var:InstallPath=\"#{get_path(new_resource.path, 'sw', node)}\" -var:OdbcDSN=\"Supportworks Data\" -var:OdbcUID=#{ swdata_db_user || cache_db_user } -var:OdbcPWD=#{ swdata_db_password || cache_db_password } -var:UseSwDatabase=#{ db_type == :sw ? 1 : 0 } -var:OdbcCacheDSN=\"Supportworks Cache\" -var:OdbcDBName=swdata -var:SystemDBUID=#{cache_db_user} -var:SystemDBPWD=#{cache_db_password} -var:EnableXMLMCDocumentation=1 -var:UseLegacyODBC=1"
     not_if { skip_esp_for_testing }
-	notifies :run, 'template[sql_configuration]', :delayed
   end
 
   template 'sql_configuration' do
-	path ::File.join(Chef::Config['file_cache_path'], 'swsqlconfs.sql')
+    path ::File.join(Chef::Config['file_cache_path'], 'swsqlconfs.sql')
     source 'swsqlconfs.sql.erb'
     variables({
-        :server => get_path(new_resource.path, 'sw', node).gsub('\\', '/'),
-		:systag => '::SYSTAG::'
+                  :server => get_path(new_resource.path, 'sw', node).gsub('\\', '/'),
+                  :systag => '::SYSTAG::'
               })
-    action :nothing #wait until I tell you!
   end
-  
+
   ruby_block 'license server' do
     block do
       license_server(get_path(new_resource.path, 'sw', node), new_resource.license)
-	  file = Chef::Util::FileEdit.new(Chef::Config['file_cache_path'], 'swsqlconfs.sql')
-	  file.search_file_replace(/::SYSTAG::/, get_sysid(new_resource.path, 'sw', node))
+      file = Chef::Util::FileEdit.new(::File.join(Chef::Config['file_cache_path'], 'swsqlconfs.sql'))
+      file.search_file_replace(/::SYSTAG::/, get_sysid(new_resource.path, 'sw', node))
       file.write_file
     end
   end
-  
+
   execute 'swqlconfs.sql' do
     cwd ::File.join(mysql_path, 'bin')
     command "mysql -f -u #{swdata_db_user || cache_db_user} --password=#{swdata_db_password || cache_db_password} --port 5002 < \"#{::File.join(Chef::Config['file_cache_path'], 'swsqlconfs.sql')}\""
@@ -99,25 +98,25 @@ action :install do
   service 'SwMailSchedule' do
     action :start
   end
-  
+
   service 'SwCalendarService' do
-	action :start
+    action :start
   end
-  
+
   service 'SwFileService' do
-	action :start
+    action :start
   end
-  
+
   service 'SwMessengerService' do
-	action :start
+    action :start
   end
-  
+
   service 'SwLogService' do
-	action :start
+    action :start
   end
-  
+
   service 'SwSchedulerService' do
-	action :start
+    action :start
   end
 
   windows_package 'client' do
@@ -165,7 +164,7 @@ action :configure do
     command "swappinstall.exe -appinstall \"#{zapp}\""
     # install_zapp(swpath.gsub('\\', '/'), zapp)
   end
-  
+
   ruby_block 'precopy ITSM' do
     block { precopy_itsm(swpath) }
   end
@@ -223,7 +222,21 @@ action :configure do
               })
   end
 
-    service 'SwServerService' do
+  ruby_block 'database_configurations' do
+    block do
+	  ::Dir.chdir(::File.join(get_path(path, 'sw', node), 'bin')) do
+        export_schema = ::File.join(Chef::Config['file_cache_path'], 'ex_dbschema.xml').gsub('/', "\\")
+        system("start cmd /k cmd /C swdbconf.exe -import \"#{::File.join(swpath, 'idata', 'itsm_default', 'dbschema.xml').gsub('/', '\\')}\"  -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd #{swdata_db_password || cache_db_password} ")
+        sleep 20
+        system("start cmd /k cmd /C swdbconf.exe -export \"#{export_schema} -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd #{swdata_db_password || cache_db_password}")
+        sleep 20
+        system("start cmd /k cmd /C swdbconf.exe -import \"#{export_schema}\"  -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd #{swdata_db_password || cache_db_password} ")
+        sleep 20
+      end
+    end
+  end
+
+  service 'SwServerService' do
     action :start
   end
 
@@ -234,27 +247,27 @@ action :configure do
   service 'SwMailSchedule' do
     action :start
   end
-  
+
   service 'SwCalendarService' do
-	action :start
+    action :start
   end
-  
+
   service 'SwFileService' do
-	action :start
+    action :start
   end
-  
+
   service 'SwMessengerService' do
-	action :start
+    action :start
   end
-  
+
   service 'SwLogService' do
-	action :start
+    action :start
   end
-  
+
   service 'SwSchedulerService' do
-	action :start
+    action :start
   end
-  
+
 
 end
 

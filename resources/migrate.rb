@@ -26,7 +26,7 @@ action :migrate do
     retries 3
     retry_delay 2
 	cwd mysql_bin
-    command "mysqldump -h #{new_resource.host} -u #{new_resource.from_user} -p#{new_resource.from_password} --port 5002 --databases swdata sw_systemdb sw_messagestore sw_knowledgebase sw_calendar --add-drop-table --single-transaction > #{::File.join(Chef::Config['file_cache_path'], 'dump.sql')}"
+    command "mysqldump -h #{new_resource.host} -u #{new_resource.from_user} -p#{new_resource.from_password} --port 5002 --databases swdata sw_systemdb sw_messagestore sw_knowledgebase sw_calendar --add-drop-table --single-transaction --quick > #{::File.join(Chef::Config['file_cache_path'], 'dump.sql')}"
   end
 
   execute 'restore' do
@@ -39,7 +39,7 @@ action :migrate do
   execute 'restore with password' do
     password = (to_user == 'root') ? to_password : root_password
 	cwd mysql_bin
-	command "mysql -u -root -p#{password} --port 5002 < #{::File.join(Chef::Config['file_cache_path'], 'dump.sql')}"
+	command "mysql -u root -p#{password} --port 5002 < #{::File.join(Chef::Config['file_cache_path'], 'dump.sql')}"
 	only_if "cd #{'"' + mysql_bin + '"'} && mysql -u root -p#{password} --port 5002"
   end
 
@@ -56,7 +56,7 @@ action :migrate do
 
   execute 'update.sql' do
     password = (to_user == 'root') ? to_password : root_password
-    only_if "cd #{'"' + mysql_bin + '"'} && mysql -u root -p#{password} --port 5002"
+    not_if "cd #{'"' + mysql_bin + '"'} && mysql -u root -p#{password} --port 5002"
     cwd mysql_bin
     command "mysql -u #{root_user} --password=#{(update_password && old_root_password ) || to_password} --port 5002 < \"#{::File.join(Chef::Config['file_cache_path'], 'update.sql')}\""
   end

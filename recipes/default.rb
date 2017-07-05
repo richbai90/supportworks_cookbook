@@ -54,6 +54,8 @@ end
 
 supportworks_server 'C:\Program Files (x86)\Hornbill\Supportworks Server' do
   action :configure
+  cache_db_user 'root'
+  cache_db_password 'testing'
   version '8.2'
   license 'Bittercreek Technology, Inc'
   media 'C:\swmedia'

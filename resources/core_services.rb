@@ -9,10 +9,6 @@ default_action :install
 action :install do
   x86_64 = node['kernel']['machine'] == 'x86_64'
   system_folder = x86_64 ? 'SysWow64' : 'system32'
-  
-  ruby_block 'debug' do
-    block { p repo_from_version('cs', version, media) }
-  end
 
   cookbook_file ::File.join('C:', 'windows', 'system32', 'swsqlodbc.dll') do
     source 'swsqlodbc.dll'
@@ -23,7 +19,7 @@ action :install do
     action :install
     # checksum checksum_from_version('cs', new_resource.version)
     source repo_from_version('cs', new_resource.version, new_resource.media)
-    options create_option_string(:fa => nil, :INSTALLDIR => path)
+    options create_option_string(:INSTALLDIR => path)
   end
   
   registry_key 'HKEY_LOCAL_MACHINE\SOFTWARE\ODBC\ODBC.INI\Supportworks Cache' do
