@@ -33,7 +33,7 @@ action :migrate do
     retries 3
     retry_delay 2
 	cwd mysql_bin
-    command "mysqldump -h #{new_resource.host} -u #{new_resource.from_user} -p#{new_resource.from_password} --port 5002 --no-data --databases swdata sw_systemdb sw_messagestore sw_knowledgebase sw_calendar --single-transaction --quick > #{::File.join(Chef::Config['file_cache_path'], 'schema.sql')}"
+    command "mysqldump -h #{new_resource.host} -u #{new_resource.from_user} -p#{new_resource.from_password} --port 5002 --no-data --databases swdata sw_systemdb sw_messagestore sw_knowledgebase sw_calendar --single-transaction --quick --add-drop-table > #{::File.join(Chef::Config['file_cache_path'], 'schema.sql')}"
   end
   
   execute 'restore_schema' do
