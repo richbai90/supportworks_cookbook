@@ -113,6 +113,8 @@ UNLOCK TABLES;
 
 UPDATE `swsecurityprofiles_tablerights_cache` SET rights = 31;
 
+INSERT INTO `system_timezones` VALUES('True GMT', 'True GMT Time With No Offsets', 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
+
 USE swdata;
 
 UPDATE swsystag set systemid = '<%= @systag %>';
