@@ -20,39 +20,6 @@ default_action :install
 
 action :install do
 
-  # template_path=file_join(Chef::Config['file_cache_path'], 'automate_server.ps1')
-  #
-  # template template_path do
-  #   source 'server.ps1.erb'
-  #   variables({
-  #                 :lic => license,
-  #                 :install_path => (get_path(get_path(new_resource.path, 'sw', node), 'sw', node)),
-  #                 :db => {type: db_type, user: [cache_db_user, swdata_db_user], pw: [cache_db_password, swdata_db_password]},
-  #                 :admin_pw => sw_admin_pw,
-  #                 :dsn => dsn
-  #             })
-  # end
-  #
-  # execute 'noop' do
-  #   action :nothing
-  # end
-  #
-  # ruby_block 'automate' do
-  #   retries 3
-  #   retry_delay 2
-  #   block { ps_script(template_path) }
-  #   only_if { registry_data_exists?(csreg(node), :name => 'Version', :type => :string, :data => '6.0.0') }
-  #   not_if { registry_key_exists?(swreg(node)) }
-  # end
-  #
-  # windows_package 'ESP' do
-  #   action :install
-  #   source repo_from_version('sw', new_resource.version, new_resource.media)
-  #   installer_type :custom
-  #   only_if { registry_data_exists?(csreg(node), :name => 'Version', :type => :string, :data => '6.0.0') }
-  #   not_if { registry_key_exists?(swreg(node)) }
-  # end
-
   mysql_path = registry_get_values("#{csreg(node)}\\Components\\MariaDB").select do |val|
     val[:name] == 'InstallPath'
   end[0][:data]
@@ -84,6 +51,12 @@ action :install do
   execute 'swqlconfs.sql' do
     cwd ::File.join(mysql_path, 'bin')
     command "mysql -f -u #{swdata_db_user || cache_db_user} --password=#{swdata_db_password || cache_db_password} --port 5002 < \"#{::File.join(Chef::Config['file_cache_path'], 'swsqlconfs.sql')}\""
+    ignore_failure false
+  end
+  
+    execute 'sw_config.sql' do
+    cwd ::File.join(mysql_path, 'bin')
+    command "mysql -f -u #{swdata_db_user || cache_db_user} --password=#{swdata_db_password || cache_db_password} --port 5002 < \"#{::File.join(Chef::Config['file_cache_path'], 'sw_config.sql')}\""
     ignore_failure false
   end
 

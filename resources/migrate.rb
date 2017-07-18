@@ -74,6 +74,18 @@ action :migrate do
                   :root_pwd => (to_user == 'root') ? to_password : root_password
               })
   end
+  
+  template ::File.join(Chef::Config['file_cache_path'], 'sw_config.sql') do
+	source 'sw_config.sql.erb'
+	variables({
+                  :dsn => swdata_dsn,
+                  :uid => swdata_user || to_user,
+                  :pwd => swdata_pw || to_password,
+                  :root => (to_user == 'root') ? to_user : root_user,
+                  :root_pwd => (to_user == 'root') ? to_password : root_password
+              })
+  end
+
 
   execute 'update.sql' do
     password = (to_user == 'root') ? to_password : root_password
