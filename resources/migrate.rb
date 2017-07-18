@@ -79,7 +79,16 @@ action :migrate do
     password = (to_user == 'root') ? to_password : root_password
     not_if "cd #{'"' + mysql_bin + '"'} && mysql -u root -p#{password} --port 5002"
     cwd mysql_bin
-    command "mysql -u #{root_user} --password=#{(update_password && old_root_password ) || to_password} --port 5002 < \"#{::File.join(Chef::Config['file_cache_path'], 'update.sql')}\""
+    command "mysql -u #{root_user} --port 5002 < \"#{::File.join(Chef::Config['file_cache_path'], 'update.sql')}\""
+	only_if "cd #{'"' + mysql_bin + '"'} && mysql -u root --port 5002"
+  end
+  
+  execute 'update.sql with password' do
+    password = (to_user == 'root') ? to_password : root_password
+    not_if "cd #{'"' + mysql_bin + '"'} && mysql -u root -p#{password} --port 5002"
+    cwd mysql_bin
+    command "mysql -u #{root_user} --port 5002 < \"#{::File.join(Chef::Config['file_cache_path'], 'update.sql')}\""
+	only_if "cd #{'"' + mysql_bin + '"'} && mysql -u root -p#{password} --port 5002"
   end
 end
 
