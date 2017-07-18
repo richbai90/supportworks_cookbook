@@ -165,8 +165,8 @@ action :configure do
   ruby_block 'copy selfservice template' do
     block do
       require('fileutils')
-	  temp_path = ::File.join(get_path(new_resource.path, 'sw', node), 'html', '_selfservice', '_itsm_default_v2_template').gsup('\\','/')
-      new_path = ::File.join(get_path(new_resource.path, 'sw', node), 'html', '_selfservice', 'selfservice').gsup('\\','/')
+	  temp_path = ::File.join(get_path(new_resource.path, 'sw', node), 'html', '_selfservice', '_itsm_default_v2_template').gsub('\\','/')
+      new_path = ::File.join(get_path(new_resource.path, 'sw', node), 'html', '_selfservice', 'selfservice').gsub('\\','/')
       if ::File.exist?(new_path) do
           FileUtils.rm_rf(new_path)
         end
