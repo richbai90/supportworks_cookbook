@@ -14,12 +14,13 @@ supportworks_core_services 'cs' do
   media 'C:\swmedia'
 end
 
-supportworks_migrate '192.168.1.109' do
+supportworks_migrate '192.168.1.108' do
   from_user 'migrate'
   from_password 'password'
   to_user 'root'
   to_password 'testing'
   update_password true
+  old_root_password ''
   swdata_dsn 'Supportworks Data' #default
 end
 
