@@ -180,6 +180,14 @@ action :configure do
     ignore_failure false
   end
 
+  service 'ApacheServer' do
+    action :stop
+  end
+  
+  service 'ApacheServer' do
+    action :start
+  end
+  
   service 'SwServerService' do
     action :start
   end
@@ -210,12 +218,6 @@ action :configure do
 
   service 'SwSchedulerService' do
     action :start
-  end
-  
-    execute 'swqlconfs.sql' do
-    cwd ::File.join(mysql_path, 'bin')
-    command "mysql -f -u #{swdata_db_user || cache_db_user} --password=#{swdata_db_password || cache_db_password} --port 5002 < \"#{::File.join(Chef::Config['file_cache_path'], 'swsqlconfs.sql')}\""
-    ignore_failure false
   end
 
 
