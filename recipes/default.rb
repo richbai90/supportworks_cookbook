@@ -6,6 +6,10 @@
 #
 # All rights reserved - Do Not Redistribute
 
+powershell_script 'kill-running-processes' do
+  code 'taskkill /f /im * /fi "imagename eq sw*"'
+end
+
 supportworks_core_services 'cs' do
   action :install #default
   path 'C:\Program Files (x86)\Hornbill\Core Services'

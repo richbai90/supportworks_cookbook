@@ -116,6 +116,7 @@ UPDATE `swsecurityprofiles_tablerights_cache` SET rights = 31;
 USE swdata;
 
 UPDATE swsystag set systemid = '<%= @systag %>';
+INSERT INTO wssm_admin (SELECT 'selfservice', wss_config_id, wss_config FROM wssm_admin WHERE wss_instance_id = '__default__');
 
 USE sw_systemdb;
 
@@ -262,4 +263,5 @@ UNLOCK TABLES;
 -- Dump completed on 2017-07-19 10:48:36
 
 UPDATE `system_counters` SET count = (SELECT MAX(callref) FROM swdata.opencall) WHERE name = 'NextCallReference'; 
+
 
