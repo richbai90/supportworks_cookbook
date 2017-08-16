@@ -24,7 +24,7 @@ supportworks_migrate '192.168.1.108' do
   to_user 'root' # this is the user that will have root privileges and that sw will use when accessing the db on the new server
   to_password 'ch@ng3d&Up!' # this is the password for the aforementioned user
   update_password true # this option says to update the password to the value in the to_password if it is not the same leave it be
-  old_root_password '' # this says what to expect the password to be prior to updating it. leave it be.
+  old_root_password 'testing' # this says what to expect the password to be prior to updating it. leave it be.
   swdata_dsn 'Supportworks Data' #default
 end
 

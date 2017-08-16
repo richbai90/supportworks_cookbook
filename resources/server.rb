@@ -24,9 +24,24 @@ action :install do
     val[:name] == 'InstallPath'
   end[0][:data]
 
-  execute 'install_ESP' do
-    cwd new_resource.media
-    command "SwSetup.exe -s -var:DefaultAdminPassword=#{sw_admin_pw} -var:InstallPath=\"#{get_path(new_resource.path, 'sw', node)}\" -var:OdbcDSN=\"Supportworks Data\" -var:OdbcUID=#{ swdata_db_user || cache_db_user } -var:OdbcPWD=#{ swdata_db_password || cache_db_password } -var:UseSwDatabase=#{ db_type == :sw ? 1 : 0 } -var:OdbcCacheDSN=\"Supportworks Cache\" -var:OdbcDBName=swdata -var:SystemDBUID=#{cache_db_user} -var:SystemDBPWD=#{cache_db_password} -var:EnableXMLMCDocumentation=1 -var:UseLegacyODBC=1"
+  powershell_script 'install_ESP' do
+    code <<~PS1
+      $DefaultAdminPassword = '#{sw_admin_pw}'
+      $InstallPath = '"#{get_path(new_resource.path, 'sw', node)}"'
+      $OdbcDSN = '"Supportworks Data"'
+      $OdbcUID = '#{swdata_db_user || cache_db_user}'
+      $OdbcPWD = '#{swdata_db_password || cache_db_password}'
+      $UseSwDatabase = #{db_type == :sw ? 1 : 0}
+      $OdbcDBName = 'swdata'
+      $OdbcCacheDSN = '"Supportworks Cache"'
+      $SystemDBUID = '#{cache_db_user}'
+      $SystemDBPWD = '#{cache_db_password}'
+      $EnableXMLMCDocumentation = 1
+      $UseLegacyODBC = 1
+
+      cd "#{new_resource.media}"
+      ./SwSetup.exe -s -var:DefaultAdminPassword=$DefaultAdminPassword -var:InstallPath=$InstallPath -var:OdbcDSN=$OdbcDSN -var:OdbcUID=$OdbcUID -var:OdbcPWD=$OdbcPWD -var:UseSwDatabase=$UseSwDatabase -var:OdbcCacheDSN=$OdbcCacheDSN -var:OdbcDBName=$OdbcDBName -var:SystemDBUID=$SystemDBUID -var:SystemDBPWD=$systemDBPWD -var:EnableXMLMCDocumentation=1 -var:UseLegacyODBC=1 | Out-Null
+    PS1
     not_if { skip_esp_for_testing }
   end
 
@@ -163,14 +178,14 @@ action :configure do
         export_schema = ::File.join(Chef::Config['file_cache_path'], 'ex_dbschema.xml').gsub('/', "\\")
         system("start cmd /k cmd /C swdbconf.exe -import \"#{::File.join(swpath, 'idata', 'itsm_default', 'dbschema.xml').gsub('/', '\\')}\"  -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
         sleep 30
-		system("start cmd /k cmd /C swdbconf.exe -s Localhost -app \"swserverservice\" -tdb swdata -log chef_dbconf.log -pipelog -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
+        system("start cmd /k cmd /C swdbconf.exe -s Localhost -app \"swserverservice\" -tdb swdata -log chef_dbconf.log -pipelog -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
         sleep 30
         system("start cmd /k cmd /C swdbconf.exe -export \"#{export_schema}\" -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
         sleep 30
         system("start cmd /k cmd /C swdbconf.exe -import \"#{export_schema}\"  -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
         sleep 30
-		system("start cmd /k cmd /C swdbconf.exe -s Localhost -app \"swserverservice\" -tdb swdata -log chef_dbconf.log -pipelog -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
-		sleep 30
+        system("start cmd /k cmd /C swdbconf.exe -s Localhost -app \"swserverservice\" -tdb swdata -log chef_dbconf.log -pipelog -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
+        sleep 30
       end
     end
   end
@@ -184,24 +199,24 @@ action :configure do
   service 'ApacheServer' do
     action :stop
   end
-  
+
   service 'ApacheServer' do
     action :start
   end
-  
+
   service 'SwServerService' do
     action :start
-	timeout 300
+    timeout 300
   end
 
   service 'SwMailService' do
     action :start
-	timeout 300
+    timeout 300
   end
 
   service 'SwMailSchedule' do
     action :start
-	timeout 300
+    timeout 300
   end
 
   service 'SwCalendarService' do
@@ -223,7 +238,6 @@ action :configure do
   service 'SwSchedulerService' do
     action :start
   end
-
 
 
 end

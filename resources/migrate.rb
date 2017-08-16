@@ -29,6 +29,13 @@ action :migrate do
     command "mysqldump -h #{new_resource.host} -u #{new_resource.from_user} --password=\"#{new_resource.from_password}\" --port 5002 --add-drop-table --databases swdata sw_systemdb sw_messagestore sw_knowledgebase sw_calendar --single-transaction --quick  > #{::File.join(Chef::Config['file_cache_path'], 'dump.sql')}"
   end
   
+  execute 'update_password' do
+    cwd mysql_bin
+    command "mysql -u root --password=\"#{old_root_password}\" --port 5002 -e \"SET PASSWORD FOR 'root'@'localhost' = OLD_PASSWORD('#{root_password}')\""
+	ignore_failure true
+	only_if "cd #{'"' + mysql_bin + '"'} && mysql -u root --password=\"#{old_root_password}\" --port 5002"
+  end
+  
     execute 'restore_data' do
 	cwd mysql_bin
     command "mysql -u root --port 5002 -f < #{::File.join(Chef::Config['file_cache_path'], 'dump.sql')}"
@@ -39,7 +46,7 @@ action :migrate do
   execute 'restore data with password' do
     password = (to_user == 'root') ? to_password : root_password
 	cwd mysql_bin
-	command "mysql -u root -p#{password} --port 5002 -f < #{::File.join(Chef::Config['file_cache_path'], 'dump.sql')}"
+	command "mysql -u root --password=\"#{password}\" --port 5002 -f < #{::File.join(Chef::Config['file_cache_path'], 'dump.sql')}"
 	only_if "cd #{'"' + mysql_bin + '"'} && mysql -u root --password=\"#{password}\" --port 5002"
   end
 
