@@ -13,26 +13,19 @@ end
 supportworks_core_services 'cs' do
   action :install #default
   path 'C:\Program Files (x86)\Hornbill\Core Services'
-  root_pw 'testing'
+  root_pw 'ch@ng3d&Up!' # this is the root password that will exist on the new server
   version '6.0'
   media 'C:\swmedia'
 end
 
 supportworks_migrate '192.168.1.108' do
-  from_user 'migrate'
-  from_password 'password'
-  to_user 'root'
-  to_password 'testing'
-  update_password true
-  old_root_password ''
+  from_user 'migrate' # this is the user we are using to migrate from the server at the address specified in the name
+  from_password 'password' #this is the password for the migrate user
+  to_user 'root' # this is the user that will have root privileges and that sw will use when accessing the db on the new server
+  to_password 'ch@ng3d&Up!' # this is the password for the aforementioned user
+  update_password true # this option says to update the password to the value in the to_password if it is not the same leave it be
+  old_root_password '' # this says what to expect the password to be prior to updating it. leave it be.
   swdata_dsn 'Supportworks Data' #default
-end
-
-supportworks_core_services 'cs' do
-  path 'C:\Program Files (x86)\Hornbill\Core Services'
-  root_pw 'testing'
-  version '6.0'
-  media 'C:\swmedia'
 end
 
 supportworks_server 'C:\Program Files (x86)\Hornbill\Supportworks Server' do
@@ -51,7 +44,7 @@ c32ffd4808215ee2039b8aef3f2148b7821452f6
 ------------------- END KEY --------------------'
   db_type :sw
   cache_db_user 'root'
-  cache_db_password 'testing'
+  cache_db_password 'ch@ng3d&Up!' # this is the password on the new server, corresponding to the to_password option in migrate and root_pw in core services
   sw_admin_pw 'password'
   media 'C:\swmedia'
   skip_esp_for_testing false
@@ -60,7 +53,7 @@ end
 supportworks_server 'C:\Program Files (x86)\Hornbill\Supportworks Server' do
   action :configure
   cache_db_user 'root'
-  cache_db_password 'testing'
+  cache_db_password 'ch@ng3d&Up!'
   version '8.2'
   license 'Bittercreek Technology, Inc'
   media 'C:\swmedia'
