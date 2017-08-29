@@ -5,7 +5,7 @@ property :cache_db_password, String, default: ''
 property :db, String, default: 'swdata'
 property :swdata_db_user, String
 property :swdata_db_password, String
-property :resources, String, name_property: true
+property :custom_resources, String, name_property: true
 default_action :install
 
 action :install do
@@ -18,7 +18,7 @@ action :install do
     val[:name] == 'InstallPath'
   end[0][:data]
 
-  load_setup(new_resource.resources, swserver)
+  load_setup(new_resource.custom_resources, swserver)
 
   ruby_block 'wait for ' + setup['prereq'] do
     block do
@@ -26,7 +26,7 @@ action :install do
       until ::File.exists?(setup['prereq'])
         sleep 5
       end
-      backup_and_copy(new_resource.resources, swserver, ::File.join(mysql_path, 'bin'), swdata_db_user || cache_db_user, swdata_db_password || cache_db_password)
+      backup_and_copy(new_resource.custom_resources, swserver, ::File.join(mysql_path, 'bin'), swdata_db_user || cache_db_user, swdata_db_password || cache_db_password)
       p 'Applying Schema Changes'
       ::Dir.chdir(::File.join(swserver, 'bin')) do
         export_schema = ::File.join(Chef::Config['file_cache_path'], 'ex_dbschema.xml').gsub('/', "\\")
