@@ -1,11 +1,92 @@
 $:.unshift *Dir[File.expand_path('../../files/default/vendor/gems/**/lib', __FILE__)]
-require 'zip'
 
 module Supportworks
   module Helpers
     extend self
+    attr_reader :setup
+	
+	def backup_folder(swserver = nil)
+		@backup_folder = @backup_folder || File.join(swserver, "backup-#{Time.now.getutc.to_s.gsub(':', '.').gsub(' ', '_')}")
+		@backup_folder
+	end
+	
+	def wait_for_db_schema
+		sleep 2
+		until `tasklist /FI "Windowtitle eq Supportworks Database Configuration Analyzer"` =~ /No tasks are running which match the specified criteria/i
+			sleep 1
+		end
+	end
 
-    require 'nokogiri'
+    def load_setup(resource, swserver)
+      require 'yaml'
+      @setup = YAML.load_file(File.join(resource, 'setup.yml'))
+      replace_vars_in_setup(swserver)
+    end
+
+    def replace_vars_in_setup(swserver, setup = nil)
+      setup = @setup if setup.nil?
+      setup.each do |k, v|
+        if (v||k).respond_to? :each
+          replace_vars_in_setup(swserver, v || k)
+        else
+          begin
+            (v||k).gsub!('%SWSERVER%', swserver)
+          rescue NoMethodError
+            # not a string so who cares
+          end
+        end
+      end
+    end
+
+    def backup_and_copy(resource, swserver, mysqlpath, mysqluser, mysqlpass)
+      p 'Backing up original SW structure and applying customizations'
+      require 'time'
+      resource.gsub!('\\', '/')
+      FileUtils.mkdir(backup_folder)
+      resources = Dir[resource + '/**/*']
+	  @backup_folder = backup_folder
+	  ::Dir.chdir(mysqlpath) do
+		`mysqldump.exe --add-drop-table --all-databases -u #{mysqluser} --password="#{mysqlpass}" --port 5002 > "#{::File.join(backup_folder, 'backup.sql')}"`
+	  end
+
+      backup_folders = resources.select do |_resource|
+        File.directory?(_resource) && !(resource =~ /node_modules/)
+      end
+
+      backup_files = resources.select do |_resource|
+        !File.directory? _resource
+      end
+
+      backup_folders.each do |f|
+        f.slice! Regexp.new ".*#{resource}(\\/?)"
+        Dir.chdir(backup_folder) do
+          begin
+            FileUtils.mkdir_p(f)
+          rescue Errno::ENOENT
+            walk_and_mkdir(f)
+          end
+          Dir.chdir(swserver) do
+            unless File.exists? f
+              FileUtils.mkdir_p(f)
+            end
+          end
+        end
+      end
+
+
+      backup_files.each do |f|
+        if File.basename(f) === 'setup.yml'
+          next # don't copy the setup.yml file
+        end
+        f.slice! Regexp.new ".*#{resource}(\\/?)"
+        server_file = File.join(swserver, f).gsub('/', '\\')
+        backup_file = File.join(backup_folder, f).gsub('/', '\\')
+        if File.exists?(server_file)
+          FileUtils.cp_r(server_file, backup_file)
+        end
+        FileUtils.cp_r(File.join(resource, f), server_file, remove_destination: true)
+      end
+    end
 
     def csreg(node)
       case node['kernel']['machine']
@@ -105,8 +186,8 @@ module Supportworks
       options = ''
       args.each do |key, val|
         if val.nil?
-		  options += "/#{key} "
-	    else
+          options += "/#{key} "
+        else
           if val.is_a? Numeric
             options += "#{key}=#{val} "
           else
@@ -163,34 +244,33 @@ module Supportworks
     end
 
     def license_server(path, license)
-      File.open(*Dir[File.join(path,'*.lic').gsub!('\\', '/')], 'wb') do |f|
+      File.open(*Dir[File.join(path, '*.lic').gsub!('\\', '/')], 'wb') do |f|
         f.write(license)
       end
     end
-	
-	def get_sysid(path, which, node)
-	  path = get_path(path, which,node)
-	  File.basename(*Dir[File.join(path,'*.lic').gsub('\\', '/')]).split('.')[0]
-	end
+
+    def get_sysid(path, which, node)
+      path = get_path(path, which, node)
+      File.basename(*Dir[File.join(path, '*.lic').gsub('\\', '/')]).split('.')[0]
+    end
 
     def precopy_itsm(basepath)
       require('fileutils')
-	  files = Dir[basepath.gsub('\\','/') + '/**/*'].select do |file|
-      	  !( (file =~ /\/itsm_default\/|\/ITSM_Default\//).nil? || File.directory?(file) )
-	  end
-	  
-	 itsm_files = files.map do |file|
-        file.gsub('itsm_default', 'itsm').gsub('ITSM_Default', 'ITSM')	  
-	  end
-	  
-	  itsm_files.each_with_index do |file, i|
-	    FileUtils.mkdir_p File.dirname(file)
-		FileUtils.cp(files[i], file)
-	  end
-	  nil
+      files = Dir[basepath.gsub('\\', '/') + '/**/*'].select do |file|
+        !((file =~ /\/itsm_default\/|\/ITSM_Default\//).nil? || File.directory?(file))
+      end
+
+      itsm_files = files.map do |file|
+        file.gsub('itsm_default', 'itsm').gsub('ITSM_Default', 'ITSM')
+      end
+
+      itsm_files.each_with_index do |file, i|
+        FileUtils.mkdir_p File.dirname(file)
+        FileUtils.cp(files[i], file)
+      end
+      nil
     end
 
   end
 
 end
-
