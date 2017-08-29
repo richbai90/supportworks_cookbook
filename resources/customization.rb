@@ -22,7 +22,10 @@ action :install do
 
   ruby_block 'wait for ' + setup['prereq'] do
     block do
-      p "\r\n" * 30 + 'Waiting for the creation of ' + setup["prereq"]
+	  (1..30).each do
+	    p ''
+	  end
+      p 'Waiting for the creation of ' + setup["prereq"]
       until ::File.exists?(setup['prereq'])
         sleep 5
       end
