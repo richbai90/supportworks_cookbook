@@ -54,8 +54,8 @@ action :migrate do
     source 'update.sql.erb'
     variables({
                   :dsn => swdata_dsn,
-                  :uid => swdata_user || to_user,
-                  :pwd => swdata_pw || to_password,
+                  :uid => swdata_user || to_user || root_user,
+                  :pwd => swdata_pw || to_password || root_password,
                   :root => (to_user == 'root') ? to_user : root_user,
                   :root_pwd => (to_user == 'root') ? to_password : root_password
               })
