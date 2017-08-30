@@ -1,4 +1,4 @@
-xcopy /O /X /E /H /K .\ ..\
+start cmd /C "..\bin\node_bin\nodevars.bat && rsync -arv * ..\"
 set /p importsql="Restore SQL Backup? (y/n) "
 IF /I %importsql=="y" (
 cd "<%= @mysql %>" && mysql.exe -u <%= @usr %> --password="<%= @pass %>" --port=5002 < "%~dp0\backup.sql"

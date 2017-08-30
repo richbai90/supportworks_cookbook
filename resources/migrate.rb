@@ -32,7 +32,6 @@ action :migrate do
   execute 'update_password' do
     cwd mysql_bin
     command "mysql -u root --password=\"#{old_root_password}\" --port 5002 -e \"SET PASSWORD FOR 'root'@'localhost' = OLD_PASSWORD('#{root_password}')\""
-	ignore_failure true
 	only_if "cd #{'"' + mysql_bin + '"'} && mysql -u root --password=\"#{old_root_password}\" --port 5002"
   end
   
@@ -49,17 +48,6 @@ action :migrate do
 	command "mysql -u root --password=\"#{password}\" --port 5002 -f < #{::File.join(Chef::Config['file_cache_path'], 'dump.sql')}"
 	only_if "cd #{'"' + mysql_bin + '"'} && mysql -u root --password=\"#{password}\" --port 5002"
   end
-
-  template ::File.join(Chef::Config['file_cache_path'], 'update.sql') do
-    source 'update.sql.erb'
-    variables({
-                  :dsn => swdata_dsn,
-                  :uid => swdata_user || to_user || root_user,
-                  :pwd => swdata_pw || to_password || root_password,
-                  :root => (to_user == 'root') ? to_user : root_user,
-                  :root_pwd => (to_user == 'root') ? to_password : root_password
-              })
-  end
   
   template ::File.join(Chef::Config['file_cache_path'], 'sw_config.sql') do
 	source 'sw_config.sql.erb'
@@ -70,23 +58,6 @@ action :migrate do
                   :root => (to_user == 'root') ? to_user : root_user,
                   :root_pwd => (to_user == 'root') ? to_password : root_password
               })
-  end
-
-
-  execute 'update.sql' do
-    password = (to_user == 'root') ? to_password : root_password
-    not_if "cd #{'"' + mysql_bin + '"'} && mysql -u root --password\"#{password}\" --port 5002"
-    cwd mysql_bin
-    command "mysql -u #{root_user} --port 5002 < \"#{::File.join(Chef::Config['file_cache_path'], 'update.sql')}\""
-	only_if "cd #{'"' + mysql_bin + '"'} && mysql -u root --port 5002"
-  end
-  
-  execute 'update.sql with password' do
-    password = (to_user == 'root') ? to_password : root_password
-    not_if "cd #{'"' + mysql_bin + '"'} && mysql -u root --password=\"#{password}\" --port 5002"
-    cwd mysql_bin
-    command "mysql -u #{root_user} --port 5002 < \"#{::File.join(Chef::Config['file_cache_path'], 'update.sql')}\""
-	only_if "cd #{'"' + mysql_bin + '"'} && mysql -u root --password=\"#{password}\" --port 5002"
   end
 end
 
