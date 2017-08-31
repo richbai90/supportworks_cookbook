@@ -31,8 +31,8 @@ action :migrate do
   
   execute 'update_password' do
     cwd mysql_bin
-    command "mysql -u root --password=\"#{old_root_password}\" --port 5002 -e \"SET PASSWORD FOR 'root'@'localhost' = OLD_PASSWORD('#{root_password}')\""
-	only_if "cd #{'"' + mysql_bin + '"'} && mysql -u root --password=\"#{old_root_password}\" --port 5002"
+    command "mysql -u root --password=\"#{old_root_password}\" --port 5002 -e \"SET PASSWORD FOR 'root'@'localhost' = OLD_PASSWORD('#{to_user === 'root' ? to_password : root_password}')\""
+	only_if "cd #{'"' + mysql_bin + '"'} && mysql -u root --password=\"#{old_root_password }\" --port 5002"
   end
   
     execute 'restore_data' do
