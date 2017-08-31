@@ -26,8 +26,16 @@ action :migrate do
     retries 3
     retry_delay 2
 	cwd mysql_bin
-    command "mysqldump -h #{new_resource.host} -u #{new_resource.from_user} --password=\"#{new_resource.from_password}\" --port 5002 --add-drop-table --databases swdata sw_systemdb sw_messagestore sw_knowledgebase sw_calendar --single-transaction --quick  > #{::File.join(Chef::Config['file_cache_path'], 'dump.sql')}"
+    command "mysqldump -h #{new_resource.host} -u #{new_resource.from_user} --password=\"#{new_resource.from_password}\" --port 5002 --add-drop-table --databases swdata sw_systemdb sw_messagestore sw_knowledgebase sw_calendar --ignore-table sw__systemdb.swanalysts --single-transaction --quick  > #{::File.join(Chef::Config['file_cache_path'], 'dump.sql')}"
   end
+  
+  execute 'dump_analyst_data' do
+    retries 3
+    retry_delay 2
+	cwd mysql_bin
+    command "mysqldump -h #{new_resource.host} -u #{new_resource.from_user} --password=\"#{new_resource.from_password}\" --port 5002 --add-drop-table --single-transaction --where=\"class=1\" --quick sw_systemdb swanalysts > #{::File.join(Chef::Config['file_cache_path'], 'analyst_dump.sql')}"
+  end
+  
   
   execute 'update_password' do
     cwd mysql_bin
@@ -42,10 +50,24 @@ action :migrate do
 	only_if "cd #{'"' + mysql_bin + '"'} && mysql -u root --port 5002"
   end
   
+  execute 'restore_analyst_data' do
+	cwd mysql_bin
+    command "mysql -u root --port 5002 -f < #{::File.join(Chef::Config['file_cache_path'], 'analyst_dump.sql')}"
+	ignore_failure true
+	only_if "cd #{'"' + mysql_bin + '"'} && mysql -u root --port 5002"
+  end
+  
   execute 'restore data with password' do
     password = (to_user == 'root') ? to_password : root_password
 	cwd mysql_bin
 	command "mysql -u root --password=\"#{password}\" --port 5002 -f < #{::File.join(Chef::Config['file_cache_path'], 'dump.sql')}"
+	only_if "cd #{'"' + mysql_bin + '"'} && mysql -u root --password=\"#{password}\" --port 5002"
+  end
+
+    execute 'restore analyst data with password' do
+    password = (to_user == 'root') ? to_password : root_password
+	cwd mysql_bin
+	command "mysql -u root --password=\"#{password}\" --port 5002 -f < #{::File.join(Chef::Config['file_cache_path'], 'analyst_dump.sql')}"
 	only_if "cd #{'"' + mysql_bin + '"'} && mysql -u root --password=\"#{password}\" --port 5002"
   end
   
