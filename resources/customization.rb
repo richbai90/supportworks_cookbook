@@ -49,7 +49,9 @@ action :install do
 
   setup['execute'].each do |exec|
     execute exec['command'] do
-      cwd exec['cwd']
+      if exec['cwd'] 
+	    cwd exec['cwd']
+	  end
       command exec['new_shell'] ? "start cmd /C cmd /C #{'"' + exec['command'] + '"'}" : exec['command']
     end
   end
