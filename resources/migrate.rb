@@ -1,4 +1,4 @@
-property :host, [String, Symbol] name_property: true
+property :host, [String, Symbol], name_property: true
 property :from_user, String, required: true
 property :from_password, String, required: true
 property :to_user, String, default: 'root'
@@ -15,6 +15,9 @@ default_action :migrate
 
 action :migrate do
 
+  p new_resource.host
+  sleep 30
+
   mysql_path = registry_get_values("#{csreg(node)}\\Components\\MariaDB").select do |val|
     val[:name] == 'InstallPath'
   end[0][:data]
@@ -27,7 +30,7 @@ action :migrate do
     retry_delay 2
 	cwd mysql_bin
     command "mysqldump -h #{new_resource.host} -u #{new_resource.from_user} --password=\"#{new_resource.from_password}\" --port 5002 --add-drop-table --databases swdata sw_systemdb sw_messagestore sw_knowledgebase sw_calendar --ignore-table sw__systemdb.swanalysts --single-transaction --quick  > #{::File.join(Chef::Config['file_cache_path'], 'dump.sql')}"
-    not_if {new_resource.host === :no_migrate}
+    not_if {new_resource.host == :no_migrate.to_s}
   end
   
   execute 'dump_analyst_data' do
@@ -35,7 +38,7 @@ action :migrate do
     retry_delay 2
 	cwd mysql_bin
     command "mysqldump -h #{new_resource.host} -u #{new_resource.from_user} --password=\"#{new_resource.from_password}\" --port 5002 --add-drop-table --single-transaction --where=\"class=1\" --quick sw_systemdb swanalysts > #{::File.join(Chef::Config['file_cache_path'], 'analyst_dump.sql')}"
-	not_if {new_resource.host === :no_migrate}
+	not_if { new_resource.host == :no_migrate.to_s }
   end
   
   
@@ -44,13 +47,13 @@ action :migrate do
     command "mysql -u root --password=\"#{old_root_password}\" --port 5002 -e \"SET PASSWORD FOR 'root'@'localhost' = OLD_PASSWORD('#{to_user === 'root' ? to_password : root_password}')\""
 	only_if "cd #{'"' + mysql_bin + '"'} && mysql -u root --password=\"#{old_root_password }\" --port 5002"
   end
-  
+ 
     execute 'restore_data' do
 	cwd mysql_bin
     command "mysql -u root --port 5002 -f < #{::File.join(Chef::Config['file_cache_path'], 'dump.sql')}"
 	ignore_failure true
 	only_if "cd #{'"' + mysql_bin + '"'} && mysql -u root --port 5002"
-	not_if {new_resource.host === :no_migrate}
+	not_if { new_resource.host == :no_migrate.to_s }
   end
   
   execute 'restore_analyst_data' do
@@ -58,7 +61,7 @@ action :migrate do
     command "mysql -u root --port 5002 -f < #{::File.join(Chef::Config['file_cache_path'], 'analyst_dump.sql')}"
 	ignore_failure true
 	only_if "cd #{'"' + mysql_bin + '"'} && mysql -u root --port 5002"
-	not_if {new_resource.host === :no_migrate}
+	not_if {new_resource.host === :no_migrate.to_s}
   end
   
   execute 'restore data with password' do
@@ -66,7 +69,7 @@ action :migrate do
 	cwd mysql_bin
 	command "mysql -u root --password=\"#{password}\" --port 5002 -f < #{::File.join(Chef::Config['file_cache_path'], 'dump.sql')}"
 	only_if "cd #{'"' + mysql_bin + '"'} && mysql -u root --password=\"#{password}\" --port 5002"
-	not_if {new_resource.host === :no_migrate}
+	not_if {new_resource.host === :no_migrate.to_s}
   end
 
     execute 'restore analyst data with password' do
@@ -74,7 +77,7 @@ action :migrate do
 	cwd mysql_bin
 	command "mysql -u root --password=\"#{password}\" --port 5002 -f < #{::File.join(Chef::Config['file_cache_path'], 'analyst_dump.sql')}"
 	only_if "cd #{'"' + mysql_bin + '"'} && mysql -u root --password=\"#{password}\" --port 5002"
-	not_if {new_resource.host === :no_migrate}
+	not_if {new_resource.host === :no_migrate.to_s}
   end
   
   template ::File.join(Chef::Config['file_cache_path'], 'sw_config.sql') do
