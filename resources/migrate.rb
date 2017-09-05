@@ -1,4 +1,4 @@
-property :host, String, name_property: true
+property :host, [String, Symbol] name_property: true
 property :from_user, String, required: true
 property :from_password, String, required: true
 property :to_user, String, default: 'root'
