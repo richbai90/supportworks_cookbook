@@ -47,7 +47,7 @@ action :install do
     end
   end
 
-  setup['execute'].each do |exec|
+  setup['execute'] || [].each do |exec|
     execute exec['command'] do
       if exec['cwd'] 
 	    cwd exec['cwd']
