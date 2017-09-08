@@ -13,8 +13,8 @@ action :install do
   service 'ApacheServer' do
     action :stop
   end
-
-  service 'SwServerService' do
+  
+  service 'SwMailSchedule' do
     action :stop
     timeout 300
   end
@@ -23,13 +23,8 @@ action :install do
     action :stop
     timeout 300
   end
-
-  service 'SwMailSchedule' do
-    action :stop
-    timeout 300
-  end
-
-  service 'SwCalendarService' do
+  
+    service 'SwCalendarService' do
     action :stop
   end
 
@@ -49,6 +44,10 @@ action :install do
     action :stop
   end
 
+  service 'SwServerService' do
+    action :stop
+    timeout 300
+  end
   swserver = registry_get_values(swreg(node)).select do |val|
     val[:name] == "InstallPath"
   end[0][:data]
