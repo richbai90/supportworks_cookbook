@@ -10,6 +10,45 @@ default_action :install
 
 action :install do
 
+  service 'ApacheServer' do
+    action :stop
+  end
+
+  service 'SwServerService' do
+    action :stop
+    timeout 300
+  end
+
+  service 'SwMailService' do
+    action :stop
+    timeout 300
+  end
+
+  service 'SwMailSchedule' do
+    action :stop
+    timeout 300
+  end
+
+  service 'SwCalendarService' do
+    action :stop
+  end
+
+  service 'SwFileService' do
+    action :stop
+  end
+
+  service 'SwMessengerService' do
+    action :stop
+  end
+
+  service 'SwLogService' do
+    action :stop
+  end
+
+  service 'SwSchedulerService' do
+    action :stop
+  end
+
   swserver = registry_get_values(swreg(node)).select do |val|
     val[:name] == "InstallPath"
   end[0][:data]
@@ -82,6 +121,45 @@ action :install do
                   :pass => swdata_db_password || cache_db_password,
                   :mysql => ::File.join(mysql_path, 'bin').gsub('/', "\\")
               })
+  end
+
+  service 'ApacheServer' do
+    action :start
+  end
+
+  service 'SwServerService' do
+    action :start
+    timeout 300
+  end
+
+  service 'SwMailService' do
+    action :start
+    timeout 300
+  end
+
+  service 'SwMailSchedule' do
+    action :start
+    timeout 300
+  end
+
+  service 'SwCalendarService' do
+    action :start
+  end
+
+  service 'SwFileService' do
+    action :start
+  end
+
+  service 'SwMessengerService' do
+    action :start
+  end
+
+  service 'SwLogService' do
+    action :start
+  end
+
+  service 'SwSchedulerService' do
+    action :start
   end
 end
 
