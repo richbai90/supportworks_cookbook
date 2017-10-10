@@ -10,7 +10,7 @@ action :install do
   x86_64 = node['kernel']['machine'] == 'x86_64'
   system_folder = x86_64 ? 'SysWow64' : 'system32'
 
-  cookbook_file ::File.join('C:', 'windows', 'system32', 'swsqlodbc.dll') do
+  cookbook_file ::File.join('C:', 'windows', system_folder, 'swsqlodbc.dll') do
     source 'swsqlodbc.dll'
     action :create
   end
