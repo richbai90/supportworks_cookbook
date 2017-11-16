@@ -72,7 +72,15 @@ action :install do
             (1..30).each do
               p ''
             end
-            (setup['prereq'] || []).each do |prereq|
+            begin
+              (setup['prereq'] || []).each do |prereq|
+                p 'Waiting for the creation of ' + prereq
+                until ::File.exists?(prereq)
+                  sleep 5
+                end
+              end
+            rescue NoMethodError
+              prereq = setup['prereq']
               p 'Waiting for the creation of ' + prereq
               until ::File.exists?(prereq)
                 sleep 5
