@@ -62,7 +62,7 @@ action :install do
 
   $setup = load_setup(new_resource.custom_resources, $swserver, $core_services)
 
-  def deployCutomizations(dir)
+  def deploy_cutomizations(dir)
     setup = load_setup(dir, $swserver, $core_services)
     ruby_block 'wait for ' + setup['prereq'] do
       block do
@@ -73,7 +73,7 @@ action :install do
         until ::File.exists?(setup['prereq'])
           sleep 5
         end
-        backup_and_copy(dir, $swserver, $core_services ::File.join($mysql_path, 'bin'), swdata_db_user || cache_db_user, swdata_db_password || cache_db_password)
+        backup_and_copy(dir, $swserver, $core_services::File.join($mysql_path, 'bin'), swdata_db_user || cache_db_user, swdata_db_password || cache_db_password)
         if setup["db_schema"] && setup["db_schema"] != null
           p 'Applying Schema Changes'
           ::Dir.chdir(::File.join($swserver, 'bin')) do
@@ -124,7 +124,9 @@ action :install do
   ::FileUtils.chdir(custom_resources) do
     $setup["deploy"].each do |d|
       ::FileUtils.chdir(d["package"]) do
-        deployCutomizations(::Dir.pwd)
+        ruby_block do
+          block { deploy_cutomizations(::Dir.pwd) }
+        end
       end
     end
   end
