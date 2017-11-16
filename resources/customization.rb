@@ -62,15 +62,7 @@ action :install do
 
   $setup = load_setup(new_resource.custom_resources, $swserver, $core_services)
 
-  ::FileUtils.chdir(custom_resources) do
-    $setup["deploy"].each do |d|
-      ::FileUtils.chdir(d["package"]) do
-        deploy(::Dir.pwd)
-      end
-    end
-  end
-
-  def deploy(dir)
+  def deployCutomizations(dir)
     setup = load_setup(dir, $swserver, $core_services)
     ruby_block 'wait for ' + setup['prereq'] do
       block do
@@ -125,6 +117,14 @@ action :install do
           cwd ::File.join(mysql_path, 'bin')
           command "mysql --port=5002 -u #{swdata_db_user || cache_db_user} --password=\"#{swdata_db_password || cache_db_password}\" < #{'"' + tmppath + '"'}"
         end
+      end
+    end
+  end
+
+  ::FileUtils.chdir(custom_resources) do
+    $setup["deploy"].each do |d|
+      ::FileUtils.chdir(d["package"]) do
+        deployCutomizations(::Dir.pwd)
       end
     end
   end
