@@ -5,7 +5,7 @@ module Supportworks
     extend self
     attr_reader :setup
 
-    def backup_folder(swserver = nil)
+    def backup_folder(swserver)
       @backup_folder = @backup_folder || File.join(swserver, "backup-#{Time.now.getutc.to_s.gsub(':', '.').gsub(' ', '_')}")
       @backup_in_progress = true
       @backup_folder
@@ -51,7 +51,7 @@ module Supportworks
             # walk_and_mkdir(file)
           end
           Dir.chdir(copy_to) do
-            unless File.exists? f
+            unless File.exists? file
               FileUtils.mkdir_p(file)
             end
           end
@@ -60,9 +60,9 @@ module Supportworks
         if File.basename(file) === 'setup.yml'
           return
         end
-        f.slice! Regexp.new ".*#{resource}(\\/?)"
-        server_file = File.join(copy_to, f).gsub('/', '\\')
-        backup_file = File.join(backup_folder, f).gsub('/', '\\')
+        file.slice! Regexp.new ".*#{resource}(\\/?)"
+        server_file = File.join(copy_to, file).gsub('/', '\\')
+        backup_file = File.join(backup_folder, file).gsub('/', '\\')
         if File.exists?(server_file)
           FileUtils.cp_r(server_file, backup_file)
         end
@@ -74,12 +74,12 @@ module Supportworks
       p 'Backing up original SW structure and applying customizations'
       require 'time'
       resource.gsub!('\\', '/')
-      FileUtils.mkdir(backup_folder)
+      FileUtils.mkdir(backup_folder(swserver))
       resources = Dir[resource + '/**/*']
-      @backup_folder = backup_folder
+      @backup_folder = backup_folder(swserver)
       unless @backup_in_progress
         ::Dir.chdir(mysqlpath) do
-          `mysqldump.exe --add-drop-table --all-databases -u #{mysqluser} --password="#{mysqlpass}" --port 5002 > "#{::File.join(backup_folder, 'backup.sql')}"`
+          `mysqldump.exe --add-drop-table --all-databases -u #{mysqluser} --password="#{mysqlpass}" --port 5002 > "#{::File.join(backup_folder(swserver), 'backup.sql')}"`
         end
       end
 
@@ -100,19 +100,19 @@ module Supportworks
       end
 
       backup_folders.each do |f|
-        do_backup_and_copy(f, backup_folder, swserver, resource, true);
+        do_backup_and_copy(f, backup_folder(swserver), swserver, resource, true);
       end
 
       backup_files.each do |f|
-        do_backup_and_copy(f, backup_folder, swserver, resource, false)
+        do_backup_and_copy(f, backup_folder(swserver), swserver, resource, false)
       end
 
       cs_folders.each do |f|
-        do_backup_and_copy(f, backup_folder, swserver, resource, true);
+        do_backup_and_copy(f, backup_folder(swserver), swserver, resource, true);
       end
 
       cs_files.each do |f|
-        do_backup_and_copy(f, backup_folder, swserver, resource, false)
+        do_backup_and_copy(f, backup_folder(swserver), swserver, resource, false)
       end
     end
 
