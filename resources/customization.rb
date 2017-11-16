@@ -67,14 +67,16 @@ action :install do
 
       def deploy_customizations(dir)
         setup = load_setup(dir, $swserver, $core_services)
-        ruby_block 'wait for ' + setup['prereq'] do
+        ruby_block 'wait for prereqs' do
           block do
             (1..30).each do
               p ''
             end
-            p 'Waiting for the creation of ' + setup["prereq"]
-            until ::File.exists?(setup['prereq'])
-              sleep 5
+            (setup['prereq'] || []).each do |prereq|
+              p 'Waiting for the creation of ' + prereq
+              until ::File.exists?(prereq)
+                sleep 5
+              end
             end
             backup_and_copy(dir, $swserver, $core_services::File.join($mysql_path, 'bin'), swdata_db_user || cache_db_user, swdata_db_password || cache_db_password)
             if setup["db_schema"] && setup["db_schema"] != null
