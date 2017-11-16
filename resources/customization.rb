@@ -124,7 +124,7 @@ action :install do
   ::FileUtils.chdir(custom_resources) do
     $setup["deploy"].each do |d|
       ::FileUtils.chdir(d["package"]) do
-        ruby_block do
+        ruby_block 'deploy' do
           block { deploy_cutomizations(::Dir.pwd) }
         end
       end
