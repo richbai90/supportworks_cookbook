@@ -68,51 +68,51 @@ module Supportworks
         FileUtils.cp_r(File.join(resource, file), server_file, remove_destination: true)
       end
     end
-  end
 
-  def backup_and_copy(resource, swserver, core_services, mysqlpath, mysqluser, mysqlpass)
-    p 'Backing up original SW structure and applying customizations'
-    require 'time'
-    resource.gsub!('\\', '/')
-    FileUtils.mkdir(backup_folder)
-    resources = Dir[resource + '/**/*']
-    @backup_folder = backup_folder
-    unless @backup_in_progress
-      ::Dir.chdir(mysqlpath) do
-        `mysqldump.exe --add-drop-table --all-databases -u #{mysqluser} --password="#{mysqlpass}" --port 5002 > "#{::File.join(backup_folder, 'backup.sql')}"`
+    def backup_and_copy(resource, swserver, core_services, mysqlpath, mysqluser, mysqlpass)
+      p 'Backing up original SW structure and applying customizations'
+      require 'time'
+      resource.gsub!('\\', '/')
+      FileUtils.mkdir(backup_folder)
+      resources = Dir[resource + '/**/*']
+      @backup_folder = backup_folder
+      unless @backup_in_progress
+        ::Dir.chdir(mysqlpath) do
+          `mysqldump.exe --add-drop-table --all-databases -u #{mysqluser} --password="#{mysqlpass}" --port 5002 > "#{::File.join(backup_folder, 'backup.sql')}"`
+        end
       end
-    end
 
-    backup_folders = resources.select do |_resource|
-      File.directory?(_resource) && !(resource =~ /node_modules/) && !(resource =~ /__CS__/)
-    end
+      backup_folders = resources.select do |_resource|
+        File.directory?(_resource) && !(resource =~ /node_modules/) && !(resource =~ /__CS__/)
+      end
 
-    cs_folders = resources.select do |_resource|
-      File.directory?(_resource) && resource =~ /__CS__/  && !(resource == '__CS__')
-    end
+      cs_folders = resources.select do |_resource|
+        File.directory?(_resource) && resource =~ /__CS__/ && !(resource == '__CS__')
+      end
 
-    backup_files = resources.select do |_resource|
-      !(File.directory? _resource && (resource =~ /node_modules/) && (resource =~ /__CS__/))
-    end
+      backup_files = resources.select do |_resource|
+        !(File.directory? _resource && (resource =~ /node_modules/) && (resource =~ /__CS__/))
+      end
 
-    cs_files = resources.select do |_resource|
-      !File.directory?(_resource) && resource =~ /__CS__/
-    end
+      cs_files = resources.select do |_resource|
+        !File.directory?(_resource) && resource =~ /__CS__/
+      end
 
-    backup_folders.each do |f|
-      do_backup_and_copy(f, backup_folder, swserver, resource, true);
-    end
+      backup_folders.each do |f|
+        do_backup_and_copy(f, backup_folder, swserver, resource, true);
+      end
 
-    backup_files.each do |f|
-      do_backup_and_copy(f, backup_folder, swserver, resource)
-    end
+      backup_files.each do |f|
+        do_backup_and_copy(f, backup_folder, swserver, resource, false)
+      end
 
-    cs_folders.each do |f|
-      do_backup_and_copy(f, backup_folder, swserver, resource, true);
-    end
+      cs_folders.each do |f|
+        do_backup_and_copy(f, backup_folder, swserver, resource, true);
+      end
 
-    cs_files.each do |f|
-      do_backup_and_copy(f, backup_folder, swserver, resource)
+      cs_files.each do |f|
+        do_backup_and_copy(f, backup_folder, swserver, resource, false)
+      end
     end
 
     def csreg(node)
@@ -299,5 +299,4 @@ module Supportworks
     end
 
   end
-
 end
