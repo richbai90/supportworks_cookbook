@@ -4,33 +4,35 @@ module Supportworks
   module Helpers
     extend self
     attr_reader :setup
-	
-	def backup_folder(swserver = nil)
-		@backup_folder = @backup_folder || File.join(swserver, "backup-#{Time.now.getutc.to_s.gsub(':', '.').gsub(' ', '_')}")
-		@backup_folder
-	end
-	
-	def wait_for_db_schema
-		sleep 2
-		until `tasklist /FI "Windowtitle eq Supportworks Database Configuration Analyzer"` =~ /No tasks are running which match the specified criteria/i
-			sleep 1
-		end
-	end
 
-    def load_setup(resource, swserver)
-      require 'yaml'
-      @setup = YAML.load_file(File.join(resource, 'setup.yml'))
-      replace_vars_in_setup(swserver)
+    def backup_folder(swserver = nil)
+      @backup_folder = @backup_folder || File.join(swserver, "backup-#{Time.now.getutc.to_s.gsub(':', '.').gsub(' ', '_')}")
+      @backup_in_progress = true
+      @backup_folder
     end
 
-    def replace_vars_in_setup(swserver, setup = nil)
+    def wait_for_db_schema
+      sleep 2
+      until `tasklist /FI "Windowtitle eq Supportworks Database Configuration Analyzer"` =~ /No tasks are running which match the specified criteria/i
+        sleep 1
+      end
+    end
+
+    def load_setup(resource, swserver, core_services)
+      require 'yaml'
+      @setup = YAML.load_file(File.join(resource, 'setup.yml'))
+      replace_vars_in_setup(swserver, core_services)
+    end
+
+    def replace_vars_in_setup(swserver, core_services, setup = nil)
       setup = @setup if setup.nil?
       setup.each do |k, v|
         if (v||k).respond_to? :each
-          replace_vars_in_setup(swserver, v || k)
+          replace_vars_in_setup(swserver, core_services, v || k)
         else
           begin
             (v||k).gsub!('%SWSERVER%', swserver)
+            (v||k).gsub!('%SWCS%', core_services)
           rescue NoMethodError
             # not a string so who cares
           end
@@ -38,54 +40,79 @@ module Supportworks
       end
     end
 
-    def backup_and_copy(resource, swserver, mysqlpath, mysqluser, mysqlpass)
-      p 'Backing up original SW structure and applying customizations'
-      require 'time'
-      resource.gsub!('\\', '/')
-      FileUtils.mkdir(backup_folder)
-      resources = Dir[resource + '/**/*']
-	  @backup_folder = backup_folder
-	  ::Dir.chdir(mysqlpath) do
-		`mysqldump.exe --add-drop-table --all-databases -u #{mysqluser} --password="#{mysqlpass}" --port 5002 > "#{::File.join(backup_folder, 'backup.sql')}"`
-	  end
-
-      backup_folders = resources.select do |_resource|
-        File.directory?(_resource) && !(resource =~ /node_modules/)
-      end
-
-      backup_files = resources.select do |_resource|
-        !File.directory? _resource
-      end
-
-      backup_folders.each do |f|
-        f.slice! Regexp.new ".*#{resource}(\\/?)"
+    def do_backup_and_copy(file, backup_folder, copy_to, resource, dir)
+      if dir
+        file.slice! Regexp.new ".*#{resource}(\\/?)"
         Dir.chdir(backup_folder) do
           begin
-            FileUtils.mkdir_p(f)
+            FileUtils.mkdir_p(file)
           rescue Errno::ENOENT
-            walk_and_mkdir(f)
+            # walk_and_mkdir(file)
           end
-          Dir.chdir(swserver) do
+          Dir.chdir(copy_to) do
             unless File.exists? f
-              FileUtils.mkdir_p(f)
+              FileUtils.mkdir_p(file)
             end
           end
         end
-      end
-
-
-      backup_files.each do |f|
-        if File.basename(f) === 'setup.yml'
+      else
+        if File.basename(file) === 'setup.yml'
           next # don't copy the setup.yml file
         end
         f.slice! Regexp.new ".*#{resource}(\\/?)"
-        server_file = File.join(swserver, f).gsub('/', '\\')
+        server_file = File.join(copy_to, f).gsub('/', '\\')
         backup_file = File.join(backup_folder, f).gsub('/', '\\')
         if File.exists?(server_file)
           FileUtils.cp_r(server_file, backup_file)
         end
-        FileUtils.cp_r(File.join(resource, f), server_file, remove_destination: true)
+        FileUtils.cp_r(File.join(resource, file), server_file, remove_destination: true)
       end
+    end
+  end
+
+  def backup_and_copy(resource, swserver, core_services, mysqlpath, mysqluser, mysqlpass)
+    p 'Backing up original SW structure and applying customizations'
+    require 'time'
+    resource.gsub!('\\', '/')
+    FileUtils.mkdir(backup_folder)
+    resources = Dir[resource + '/**/*']
+    @backup_folder = backup_folder
+    unless @backup_in_progress
+      ::Dir.chdir(mysqlpath) do
+        `mysqldump.exe --add-drop-table --all-databases -u #{mysqluser} --password="#{mysqlpass}" --port 5002 > "#{::File.join(backup_folder, 'backup.sql')}"`
+      end
+    end
+
+    backup_folders = resources.select do |_resource|
+      File.directory?(_resource) && !(resource =~ /node_modules/) && !(resource =~ /__CS__/)
+    end
+
+    cs_folders = resources.select do |_resource|
+      File.directory?(_resource) && resource =~ /__CS__/  && !(resource == '__CS__')
+    end
+
+    backup_files = resources.select do |_resource|
+      !(File.directory? _resource && (resource =~ /node_modules/) && (resource =~ /__CS__/))
+    end
+
+    cs_files = resources.select do |_resource|
+      !File.directory?(_resource) && resource =~ /__CS__/
+    end
+
+    backup_folders.each do |f|
+      do_backup_and_copy(f, backup_folder, swserver, resource, true);
+    end
+
+    backup_files.each do |f|
+      do_backup_and_copy(f, backup_folder, swserver, resource)
+    end
+
+    cs_folders.each do |f|
+      do_backup_and_copy(f, backup_folder, swserver, resource, true);
+    end
+
+    cs_files.each do |f|
+      do_backup_and_copy(f, backup_folder, swserver, resource)
     end
 
     def csreg(node)
