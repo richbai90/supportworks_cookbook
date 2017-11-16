@@ -57,7 +57,7 @@ module Supportworks
         end
       else
         if File.basename(file) === 'setup.yml'
-          next # don't copy the setup.yml file
+          return
         end
         f.slice! Regexp.new ".*#{resource}(\\/?)"
         server_file = File.join(copy_to, f).gsub('/', '\\')
