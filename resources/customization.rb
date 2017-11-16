@@ -63,7 +63,7 @@ action :install do
   setup = load_setup(new_resource.custom_resources, $swserver, $core_services)
 
   setup["deploy"].each do |d|
-    setup["package"].each do |p|
+    d["package"].each do |p|
       ruby_block 'deploy' do
         block do
           def deploy_customizations(dir)
