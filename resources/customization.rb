@@ -127,17 +127,17 @@ action :install do
       setup["deploy"].each do |d|
         deploy_customizations(::File.join(new_resource.custom_resources, d["package"]))
       end
+      template 'restore.bat' do
+        p $swserver
+        path ::File.join(backup_folder($swserver), 'restore.bat')
+        source 'restore.bat.erb'
+        variables({
+                      :usr => swdata_db_user || cache_db_user,
+                      :pass => swdata_db_password || cache_db_password,
+                      :mysql => ::File.join($mysql_path, 'bin').gsub('/', "\\")
+                  })
+      end
     end
-  end
-
-  template 'restore.bat' do
-    path ::File.join(backup_folder($swserver), 'restore.bat')
-    source 'restore.bat.erb'
-    variables({
-                  :usr => swdata_db_user || cache_db_user,
-                  :pass => swdata_db_password || cache_db_password,
-                  :mysql => ::File.join($mysql_path, 'bin').gsub('/', "\\")
-              })
   end
 
   service 'ApacheServer' do
