@@ -124,7 +124,7 @@ action :install do
           end
         end
 
-        deploy_cutomizations(::File.join(custom_resources, d))
+        deploy_cutomizations(::File.join(new_resource.custom_resources, d))
       end
     end
   end
