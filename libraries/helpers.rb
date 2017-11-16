@@ -31,6 +31,7 @@ module Supportworks
           replace_vars_in_setup(swserver, core_services, v || k)
         else
           begin
+            p(v||k)
             (v||k).gsub!('%SWSERVER%', swserver)
             (v||k).gsub!('%SWCS%', core_services)
           rescue NoMethodError
