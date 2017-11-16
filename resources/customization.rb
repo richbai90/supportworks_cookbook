@@ -73,7 +73,7 @@ action :install do
                 p ''
               end
               p 'Waiting for the creation of ' + prereq
-              until ::File.exists?(setup['prereq'])
+              until ::File.exists?(prereq)
                 sleep 5
               end
               backup_and_copy(d["package"], swserver, core_services::File.join(mysql_path, 'bin'), swdata_db_user || cache_db_user, swdata_db_password || cache_db_password)
@@ -104,7 +104,7 @@ action :install do
               p ''
             end
             p 'Waiting for the creation of ' + prereq
-            until ::File.exists?(setup['prereq'])
+            until ::File.exists?(prereq)
               sleep 5
             end
             backup_and_copy(d["package"], swserver, core_services::File.join(mysql_path, 'bin'), swdata_db_user || cache_db_user, swdata_db_password || cache_db_password)
