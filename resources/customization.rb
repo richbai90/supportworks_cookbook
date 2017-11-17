@@ -102,7 +102,7 @@ action :install do
 
       ruby_block "Apply Schema Changes" do
         block do
-          if setup.has_key? "db_schema" && setup["db_schema"].respond_to?(:empty) && !setup["db_schema"].empty
+          if setup.has_key?('db_schema') && setup['db_schema'].respond_to?(:empty?) && !setup['db_schema'].empty?
             p 'Applying Schema Changes'
             ::Dir.chdir(::File.join(swserver, 'bin')) do
               export_schema = ::File.join(Chef::Config['file_cache_path'], 'ex_dbschema.xml').gsub('/', "\\")
