@@ -66,13 +66,22 @@ action :install do
     ::FileUtils.chdir(new_resource.custom_resources) do
       _cwd = Dir.pwd
       setup = load_setup(d["package"], swserver, core_services)
-      if setup['prereq'].respond_to? :each
-        setup['prereq'].each do |prereq|
-          ruby_block "wait for #{prereq}" do
-            block do
-              (1..30).each do
-                p ''
+      begin
+        if setup['prereq'].respond_to? :each
+          setup['prereq'].each do |prereq|
+            ruby_block "wait for #{prereq}" do
+              block do
+                p 'Waiting for the creation of ' + prereq
+                until ::File.exists?(prereq)
+                  sleep 5
+                end
               end
+            end
+          end
+        else
+          ruby_block "wait for #{setup['prereq']}" do
+            block do
+              prereq = setup['prereq']
               p 'Waiting for the creation of ' + prereq
               until ::File.exists?(prereq)
                 sleep 5
@@ -80,19 +89,8 @@ action :install do
             end
           end
         end
-      else
-        ruby_block "wait for #{setup['prereq']}" do
-          block do
-            prereq = setup['prereq']
-            (1..30).each do
-              p ''
-            end
-            p 'Waiting for the creation of ' + prereq
-            until ::File.exists?(prereq)
-              sleep 5
-            end
-          end
-        end
+      rescue TypeError
+        p setup['prereq']
       end
 
 
