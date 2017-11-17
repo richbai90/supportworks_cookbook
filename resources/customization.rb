@@ -165,20 +165,20 @@ action :install do
           end
         end
       end
-      wrap_array(_setup['reg']).each do |reg|
-        path = expand_reg(reg['path'])
-        type = reg.has_key?('type') ? reg['type'].to_sym : :string
-        values = []
-        wrap_array(reg['entry']).each do |entry|
-          values.push({:name => entry['name'], :type => type, :data => entry['value']})
-        end
-        registry_key path do
-          values values
-
-          architecture(x86_64 ? :i386 : :machine)
-        end
-
-      end
+      # wrap_array(_setup['reg']).each do |reg|
+      #   path = expand_reg(reg['path'])
+      #   type = reg.has_key?('type') ? reg['type'].to_sym : :string
+      #   values = []
+      #   wrap_array(reg['entry']).each do |entry|
+      #     values.push({:name => entry['name'], :type => type, :data => entry['value']})
+      #   end
+      #   registry_key path do
+      #     values values
+      #
+      #     architecture(x86_64 ? :i386 : :machine)
+      #   end
+      #
+      # end
     end
   end
 
