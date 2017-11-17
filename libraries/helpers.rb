@@ -42,10 +42,11 @@ module Supportworks
     end
 
     def do_backup_and_copy(file, backup_folder, copy_to, resource, dir)
-      # "C:/bti_itsm/AdfsIntegration/__CS__/Apache/conf/cs/apps"
-      p resource
       file.slice! Regexp.new ".*#{resource}(\\/?)"
       file.slice! /.*__CS__(\/?)/
+      if file.empty?
+        return
+      end
       if dir
         Dir.chdir(backup_folder) do
           begin
