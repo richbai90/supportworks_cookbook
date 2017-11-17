@@ -67,7 +67,7 @@ action :install do
       _cwd = Dir.pwd
       setup = load_setup(d["package"], swserver, core_services)
       begin
-        if setup['prereq'].respond_to? :each
+        if setup['prereq'].respond_to?(:each)
           setup['prereq'].each do |prereq|
             ruby_block "wait for #{prereq}" do
               block do
@@ -79,9 +79,9 @@ action :install do
             end
           end
         else
-          ruby_block "wait for #{setup['prereq']}" do
+          prereq = setup['prereq']
+          ruby_block "wait for #{prereq}" do
             block do
-              prereq = setup['prereq']
               p 'Waiting for the creation of ' + prereq
               until ::File.exists?(prereq)
                 sleep 5
