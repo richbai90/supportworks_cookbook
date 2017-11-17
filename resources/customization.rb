@@ -66,7 +66,7 @@ action :install do
     ::FileUtils.chdir(new_resource.custom_resources) do
       _cwd = Dir.pwd
       setup = load_setup(d["package"], swserver, core_services)
-      begin
+      if setup['prereq'].respond_to? :each
         setup['prereq'].each do |prereq|
           ruby_block "wait for #{prereq}" do
             block do
@@ -80,7 +80,7 @@ action :install do
             end
           end
         end
-      rescue TypeError
+      else
         ruby_block "wait for #{setup['prereq']}" do
           block do
             prereq = setup['prereq']
@@ -94,6 +94,7 @@ action :install do
           end
         end
       end
+
 
       ruby_block "Backup and copy files from #{d["package"]}" do
         block do
