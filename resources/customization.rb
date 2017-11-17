@@ -65,10 +65,10 @@ action :install do
   setup["deploy"].each do |d|
     ::FileUtils.chdir(new_resource.custom_resources) do
       _cwd = Dir.pwd
-      setup = load_setup(d["package"], swserver, core_services)
+      _setup = load_setup(d["package"], swserver, core_services)
       begin
-        if setup['prereq'].respond_to?(:each)
-          setup['prereq'].each do |prereq|
+        if _setup['prereq'].respond_to?(:each)
+          _setup['prereq'].each do |prereq|
             ruby_block "wait for #{prereq}" do
               block do
                 p 'Waiting for the creation of ' + prereq
@@ -79,7 +79,7 @@ action :install do
             end
           end
         else
-          prereq = setup['prereq']
+          prereq = _setup['prereq']
           ruby_block "wait for #{prereq}" do
             block do
               p 'Waiting for the creation of ' + prereq
@@ -90,7 +90,7 @@ action :install do
           end
         end
       rescue TypeError
-        p setup['prereq']
+        p _setup['prereq']
       end
 
 
@@ -102,11 +102,11 @@ action :install do
 
       ruby_block "Apply Schema Changes" do
         block do
-          if setup.has_key?('db_schema') && setup['db_schema'].respond_to?(:empty?) && !setup['db_schema'].empty?
+          if _setup.has_key?('db_schema') && _setup['db_schema'].respond_to?(:empty?) && !_setup['db_schema'].empty?
             p 'Applying Schema Changes'
             ::Dir.chdir(::File.join(swserver, 'bin')) do
               export_schema = ::File.join(Chef::Config['file_cache_path'], 'ex_dbschema.xml').gsub('/', "\\")
-              system("start cmd /k cmd /C swdbconf.exe -import \"#{setup["db_schema"].gsub('/', '\\')}\"  -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
+              system("start cmd /k cmd /C swdbconf.exe -import \"#{_setup["db_schema"].gsub('/', '\\')}\"  -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
               wait_for_db_schema
               system("start cmd /k cmd /C swdbconf.exe -s Localhost -app \"swserverservice\" -tdb swdata -log chef_dbconf.log -pipelog -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
               wait_for_db_schema
@@ -121,7 +121,7 @@ action :install do
         end
       end
 
-      (setup['execute'] || []).each do |exec|
+      (_setup['execute'] || []).each do |exec|
         execute exec['command'] do
           if exec['cwd']
             cwd exec['cwd']
@@ -130,7 +130,7 @@ action :install do
         end
       end
 
-      (setup['queries'] || []).each do |db, queries|
+      (_setup['queries'] || []).each do |db, queries|
         queries.each do |query|
           tmpname = ::Dir::Tmpname.make_tmpname('sql', nil)
           tmppath = ::File.join(Chef::Config['file_cache_path'], tmpname)

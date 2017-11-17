@@ -22,6 +22,7 @@ module Supportworks
       require 'yaml'
       @setup = YAML.load_file(File.join(resource, 'setup.yml'))
       replace_vars_in_setup(swserver, core_services)
+      @setup
     end
 
     def replace_vars_in_setup(swserver, core_services, setup = nil)
