@@ -80,7 +80,7 @@ action :install do
             end
           end
         end
-      rescue NoMethodError
+      rescue TypeError
         ruby_block "wait for #{setup['prereq']}" do
           block do
             prereq = setup['prereq']
