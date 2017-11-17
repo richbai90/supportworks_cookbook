@@ -5,6 +5,37 @@ module Supportworks
     extend self
     attr_reader :setup
 
+    def wrap_array(o)
+      # wrap o in an array unless it's already an array
+      if o.respond_to?(:each) && !respond_to?(:keys)
+        # is o an array? Return o
+        o
+      else
+        # is o nil? return [] else return [o]
+        o.nil? ? [] : [o]
+      end
+    end
+
+    def expand_reg(path)
+      path = path.split('\\')
+      hkey = path.shift
+      case hkey
+        when 'HKLM'
+          hkey = 'HKEY_LOCAL_MACHINE'
+        when 'HKCR'
+          hkey = 'HKEY_CLASSES_ROOT'
+        when 'HKCU'
+          hkey = 'HKEY_CURRENT_USER'
+        when 'HKU'
+          hkey = 'HKEY_USERS'
+        when 'HKCC'
+          hkey = 'HKEY_CURRENT_CONFIG'
+        else
+          # do nothing
+      end
+      (path.unshift hkey).join('\\')
+    end
+
     def backup_folder(swserver)
       @backup_folder = @backup_folder || File.join(swserver, "backup-#{Time.now.getutc.to_s.gsub(':', '.').gsub(' ', '_')}")
       @backup_in_progress = true

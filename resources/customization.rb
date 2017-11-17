@@ -120,17 +120,33 @@ action :install do
           end
         end
       end
-
-      (_setup['execute'] || []).each do |exec|
-        execute exec['command'] do
-          if exec['cwd']
-            cwd exec['cwd']
+      wrap_array(_setup['execute']).each do |exec|
+        if exec.respond_to? :lines
+          # exec is a string so lets check if we need to use a ps template
+          if exec.lines.count > 1
+            # multi line string, need to use a ps1 template
+            powershell_script exec.lines.first do
+              code exec
+            end
+          else
+            # on liner, just use exec
+            execute exec do
+              command exec
+            end
           end
-          command exec['new_shell'] ? "start cmd /C cmd /C #{'"' + exec['command'] + '"'}" : exec['command']
+        else
+          # exec is an object wrap cmd in an array incase we have multiple cmds in one dir
+          wrap_array(exec['cmd']).each do |cmd|
+            execute cmd do
+              if exec['cwd']
+                cwd exec['cwd']
+              end
+              command exec['new_shell'] ? "start cmd /C cmd /C #{'"' + cmd + '"'}" : cmd
+            end
+          end
         end
       end
-
-      (_setup['queries'] || []).each do |db, queries|
+      wrap_array(_setup['queries']).each do |db, queries|
         queries.each do |query|
           tmpname = ::Dir::Tmpname.make_tmpname('sql', nil)
           tmppath = ::File.join(Chef::Config['file_cache_path'], tmpname)
@@ -146,6 +162,20 @@ action :install do
             command "mysql --port=5002 -u #{swdata_db_user || cache_db_user} --password=\"#{swdata_db_password || cache_db_password}\" < #{'"' + tmppath + '"'}"
           end
         end
+      end
+      wrap_arry(_setup['reg']).each do |reg|
+        path = expand_reg(reg)
+        type = reg.has_key?('type') ? reg['type'].to_sym : :string
+        values = []
+        wrap_array(reg['entries']) do |entry|
+          values.push({:name => entry['name'], :type => type, :data => entry['value']})
+        end
+        registry_key path do
+          values values
+
+          architecture(x86_64 ? :i386 : :machine)
+        end
+
       end
     end
   end
