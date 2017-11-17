@@ -96,7 +96,6 @@ module Supportworks
         File.directory?(_resource) && !((_resource =~ /node_modules/) || (_resource =~ /__CS__/))
       end
 
-      p resources
       cs_folders = resources.select do |_resource|
         File.directory?(_resource) && _resource =~ /__CS__/ && !(_resource == '__CS__')
       end
