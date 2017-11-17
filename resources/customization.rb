@@ -68,7 +68,7 @@ action :install do
       setup = load_setup(d["package"], swserver, core_services)
       begin
         setup['prereq'].each do |prereq|
-          ruby_block 'wait for ' + prereq do
+          ruby_block "wait for #{prereq}" do
             block do
               (1..30).each do
                 p ''
@@ -77,33 +77,13 @@ action :install do
               until ::File.exists?(prereq)
                 sleep 5
               end
-              backup_and_copy(::File.join(_cwd, d["package"]), swserver, core_services, ::File.join(mysql_path, 'bin'), swdata_db_user || cache_db_user, swdata_db_password || cache_db_password)
-              p setup["name"]
-              p setup["db_schema"]
-              sleep 30
-              if setup["db_schema"] && setup["db_schema"] != null
-                p 'Applying Schema Changes'
-                ::Dir.chdir(::File.join(swserver, 'bin')) do
-                  export_schema = ::File.join(Chef::Config['file_cache_path'], 'ex_dbschema.xml').gsub('/', "\\")
-                  system("start cmd /k cmd /C swdbconf.exe -import \"#{setup["db_schema"].gsub('/', '\\')}\"  -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
-                  wait_for_db_schema
-                  system("start cmd /k cmd /C swdbconf.exe -s Localhost -app \"swserverservice\" -tdb swdata -log chef_dbconf.log -pipelog -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
-                  wait_for_db_schema
-                  system("start cmd /k cmd /C swdbconf.exe -export \"#{export_schema}\" -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
-                  wait_for_db_schema
-                  system("start cmd /k cmd /C swdbconf.exe -import \"#{export_schema}\"  -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
-                  wait_for_db_schema
-                  system("start cmd /k cmd /C swdbconf.exe -s Localhost -app \"swserverservice\" -tdb swdata -log chef_dbconf.log -pipelog -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
-                  wait_for_db_schema
-                end
-              end
             end
           end
         end
       rescue NoMethodError
-        prereq = setup['prereq']
-        ruby_block 'wait for ' + prereq do
+        ruby_block "wait for #{setup['prereq']}" do
           block do
+            prereq = setup['prereq']
             (1..30).each do
               p ''
             end
@@ -111,22 +91,32 @@ action :install do
             until ::File.exists?(prereq)
               sleep 5
             end
-            backup_and_copy(::File.join(_cwd, d["package"]), swserver, core_services, ::File.join(mysql_path, 'bin'), swdata_db_user || cache_db_user, swdata_db_password || cache_db_password)
-            if setup["db_schema"] && setup["db_schema"] != null
-              p 'Applying Schema Changes'
-              ::Dir.chdir(::File.join(swserver, 'bin')) do
-                export_schema = ::File.join(Chef::Config['file_cache_path'], 'ex_dbschema.xml').gsub('/', "\\")
-                system("start cmd /k cmd /C swdbconf.exe -import \"#{setup["db_schema"].gsub('/', '\\')}\"  -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
-                wait_for_db_schema
-                system("start cmd /k cmd /C swdbconf.exe -s Localhost -app \"swserverservice\" -tdb swdata -log chef_dbconf.log -pipelog -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
-                wait_for_db_schema
-                system("start cmd /k cmd /C swdbconf.exe -export \"#{export_schema}\" -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
-                wait_for_db_schema
-                system("start cmd /k cmd /C swdbconf.exe -import \"#{export_schema}\"  -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
-                wait_for_db_schema
-                system("start cmd /k cmd /C swdbconf.exe -s Localhost -app \"swserverservice\" -tdb swdata -log chef_dbconf.log -pipelog -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
-                wait_for_db_schema
-              end
+          end
+        end
+      end
+
+      ruby_block "Backup and copy files from #{d["package"]}" do
+        block do
+          backup_and_copy(::File.join(_cwd, d["package"]), swserver, core_services, ::File.join(mysql_path, 'bin'), swdata_db_user || cache_db_user, swdata_db_password || cache_db_password)
+        end
+      end
+
+      ruby_block "Apply Schema Changes" do
+        block do
+          if setup.has_key? "db_schema" && setup["db_schema"].respond_to?(:empty) && !setup["db_schema"].empty
+            p 'Applying Schema Changes'
+            ::Dir.chdir(::File.join(swserver, 'bin')) do
+              export_schema = ::File.join(Chef::Config['file_cache_path'], 'ex_dbschema.xml').gsub('/', "\\")
+              system("start cmd /k cmd /C swdbconf.exe -import \"#{setup["db_schema"].gsub('/', '\\')}\"  -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
+              wait_for_db_schema
+              system("start cmd /k cmd /C swdbconf.exe -s Localhost -app \"swserverservice\" -tdb swdata -log chef_dbconf.log -pipelog -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
+              wait_for_db_schema
+              system("start cmd /k cmd /C swdbconf.exe -export \"#{export_schema}\" -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
+              wait_for_db_schema
+              system("start cmd /k cmd /C swdbconf.exe -import \"#{export_schema}\"  -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
+              wait_for_db_schema
+              system("start cmd /k cmd /C swdbconf.exe -s Localhost -app \"swserverservice\" -tdb swdata -log chef_dbconf.log -pipelog -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
+              wait_for_db_schema
             end
           end
         end
