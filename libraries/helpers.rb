@@ -93,12 +93,11 @@ module Supportworks
 
       p resources
       cs_folders = resources.select do |_resource|
-        p _resource
         File.directory?(_resource) && resource =~ /__CS__/ && !(resource == '__CS__')
       end
 
       backup_files = resources.select do |_resource|
-        !(File.directory? _resource && (resource =~ /node_modules/) && (resource =~ /__CS__/))
+        !(File.directory?(_resource) && (resource =~ /node_modules/) && (resource =~ /__CS__/))
       end
 
       cs_files = resources.select do |_resource|
