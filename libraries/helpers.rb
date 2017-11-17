@@ -42,8 +42,9 @@ module Supportworks
     end
 
     def do_backup_and_copy(file, backup_folder, copy_to, resource, dir)
+      file.slice! /__CS__.*(\/?)/
+      file.slice! Regexp.new ".*#{resource}(\\/?)"
       if dir
-        file.slice! Regexp.new ".*#{resource}(\\/?)"
         Dir.chdir(backup_folder) do
           begin
             FileUtils.mkdir_p(file)
@@ -60,7 +61,6 @@ module Supportworks
         if File.basename(file) === 'setup.yml'
           return
         end
-        file.slice! Regexp.new ".*#{resource}(\\/?)"
         server_file = File.join(copy_to, file).gsub('/', '\\')
         backup_file = File.join(backup_folder, file).gsub('/', '\\')
         if File.exists?(server_file)
