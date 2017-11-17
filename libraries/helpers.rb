@@ -71,9 +71,9 @@ module Supportworks
     end
 
     def backup_and_copy(resource, swserver, core_services, mysqlpath, mysqluser, mysqlpass)
+      resource = File.realpath(resource).gsub('\\', '/')
       p 'Backing up original SW structure and applying customizations'
       require 'time'
-      resource.gsub!('\\', '/')
       FileUtils.mkdir(backup_folder(swserver))
       resources = Dir[resource + '/**/*']
       @backup_folder = backup_folder(swserver)
