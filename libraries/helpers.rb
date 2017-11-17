@@ -113,11 +113,11 @@ module Supportworks
       end
 
       cs_folders.each do |f|
-        do_backup_and_copy(f, backup_folder(swserver), swserver, resource, true);
+        do_backup_and_copy(f, backup_folder(swserver), core_services, resource, true);
       end
 
       cs_files.each do |f|
-        do_backup_and_copy(f, backup_folder(swserver), swserver, resource, false)
+        do_backup_and_copy(f, backup_folder(swserver), core_services, resource, false)
       end
     end
 
