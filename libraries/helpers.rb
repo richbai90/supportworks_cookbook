@@ -43,6 +43,8 @@ module Supportworks
 
     def do_backup_and_copy(file, backup_folder, copy_to, resource, dir)
       file.slice! Regexp.new ".*#{resource}(\\/?)"
+      file.slice! /__CS__.*(\/?)/
+      p file
       if dir
         Dir.chdir(backup_folder) do
           begin
