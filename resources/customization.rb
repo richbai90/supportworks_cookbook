@@ -64,8 +64,8 @@ action :install do
 
   setup = load_setup(new_resource.custom_resources, swserver, core_services)
   ::FileUtils.chdir(new_resource.custom_resources) do
-    setup["deploy"].each do |d|
-      setup_file = ::File.realpath(::File.join(d, 'setup.yml'))
+    setup['deploy'].each do |d|
+      setup_file = ::File.realpath(::File.join(d['package'], 'setup.yml'))
       ::File.open(setup_file) do |infile|
         l = 0
         while (line = infile.gets)
