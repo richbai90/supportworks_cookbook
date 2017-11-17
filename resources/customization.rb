@@ -64,7 +64,7 @@ action :install do
 
   setup["deploy"].each do |d|
     ::FileUtils.chdir(new_resource.custom_resources) do
-      cwd = Dir.pwd
+      _cwd = Dir.pwd
       setup = load_setup(d["package"], swserver, core_services)
       begin
         setup['prereq'].each do |prereq|
@@ -77,7 +77,7 @@ action :install do
               until ::File.exists?(prereq)
                 sleep 5
               end
-              backup_and_copy(File.join(cwd, d["package"]), swserver, core_services, ::File.join(mysql_path, 'bin'), swdata_db_user || cache_db_user, swdata_db_password || cache_db_password)
+              backup_and_copy(File.join(_cwd, d["package"]), swserver, core_services, ::File.join(mysql_path, 'bin'), swdata_db_user || cache_db_user, swdata_db_password || cache_db_password)
               if setup["db_schema"] && setup["db_schema"] != null
                 p 'Applying Schema Changes'
                 ::Dir.chdir(::File.join(swserver, 'bin')) do
@@ -108,7 +108,7 @@ action :install do
             until ::File.exists?(prereq)
               sleep 5
             end
-            backup_and_copy(d["package"], swserver, core_services, ::File.join(mysql_path, 'bin'), swdata_db_user || cache_db_user, swdata_db_password || cache_db_password)
+            backup_and_copy(::File.join(_cwd, d["package"]), swserver, core_services, ::File.join(mysql_path, 'bin'), swdata_db_user || cache_db_user, swdata_db_password || cache_db_password)
             if setup["db_schema"] && setup["db_schema"] != null
               p 'Applying Schema Changes'
               ::Dir.chdir(::File.join(swserver, 'bin')) do
