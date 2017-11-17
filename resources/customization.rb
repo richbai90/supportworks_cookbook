@@ -169,7 +169,7 @@ action :install do
         path = expand_reg(reg['path'])
         type = reg.has_key?('type') ? reg['type'].to_sym : :string
         values = []
-        wrap_array(reg['entries']) do |entry|
+        wrap_array(reg['entries']).each do |entry|
           values.push({:name => entry['name'], :type => type, :data => entry['value']})
         end
         registry_key path do
