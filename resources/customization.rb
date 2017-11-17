@@ -78,6 +78,7 @@ action :install do
                 sleep 5
               end
               backup_and_copy(::File.join(_cwd, d["package"]), swserver, core_services, ::File.join(mysql_path, 'bin'), swdata_db_user || cache_db_user, swdata_db_password || cache_db_password)
+              p setup["name"]
               p setup["db_schema"]
               sleep 30
               if setup["db_schema"] && setup["db_schema"] != null
