@@ -43,7 +43,7 @@ module Supportworks
 
     def do_backup_and_copy(file, backup_folder, copy_to, resource, dir)
       file.slice! Regexp.new ".*#{resource}(\\/?)"
-      file.slice! /.*__CS__(\/?)/
+      cs_file = file.slice! /.*__CS__(\/?)/
       if file.empty?
         return
       end
@@ -69,7 +69,9 @@ module Supportworks
         if File.exists?(server_file)
           FileUtils.cp_r(server_file, backup_file)
         end
-        FileUtils.cp_r(File.join(resource, file), server_file, remove_destination: true)
+
+        package_file = cs_file.nil? ? File.join(resource, file) : File.join(resource, '__CS__', file)
+        FileUtils.cp_r(package_file, server_file, remove_destination: true)
       end
     end
 
