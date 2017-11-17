@@ -63,6 +63,22 @@ action :install do
   x86_64 = node['kernel']['machine'] == 'x86_64'
 
   setup = load_setup(new_resource.custom_resources, swserver, core_services)
+  ::FileUtils.chdir(new_resource.custom_resources) do
+    setup["deploy"].each do |d|
+      setup_file = ::File.realpath(::File.join(d, 'setup.yml'))
+      ::File.open(setup_file) do |infile|
+        l = 0
+        while (line = infile.gets)
+          l = l + 1
+          if line =~ /CHANGE_ME/i
+            class NotReadyError < StandardError
+            end
+            raise(NotReadyError, "ONE ORE MORE SETUP FILES ARE NOT READY TO BE DEPLOYED IN #{setup_file} LINE #{l} (CHANGE_ME)")
+          end
+        end
+      end
+    end
+  end
 
   setup["deploy"].each do |d|
     ::FileUtils.chdir(new_resource.custom_resources) do
