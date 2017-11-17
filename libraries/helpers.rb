@@ -71,16 +71,20 @@ module Supportworks
     end
 
     def backup_and_copy(resource, swserver, core_services, mysqlpath, mysqluser, mysqlpass)
-      resource = File.realpath(resource).gsub('\\', '/')
-      p 'Backing up original SW structure and applying customizations'
       require 'time'
-      FileUtils.mkdir(backup_folder(swserver))
+      resource = File.realpath(resource).gsub('\\', '/')
       resources = Dir[resource + '/**/*']
-      @backup_folder = backup_folder(swserver)
-      unless @backup_in_progress
-        ::Dir.chdir(mysqlpath) do
-          `mysqldump.exe --add-drop-table --all-databases -u #{mysqluser} --password="#{mysqlpass}" --port 5002 > "#{::File.join(backup_folder(swserver), 'backup.sql')}"`
+      p 'Backing up original SW structure and applying customizations'
+      begin
+        FileUtils.mkdir(backup_folder(swserver))
+        @backup_folder = backup_folder(swserver)
+        unless @backup_in_progress
+          ::Dir.chdir(mysqlpath) do
+            `mysqldump.exe --add-drop-table --all-databases -u #{mysqluser} --password="#{mysqlpass}" --port 5002 > "#{::File.join(backup_folder(swserver), 'backup.sql')}"`
+          end
         end
+      rescue Errno::EEXIST
+        # no need to make the folder if the folder already exists
       end
 
       backup_folders = resources.select do |_resource|
