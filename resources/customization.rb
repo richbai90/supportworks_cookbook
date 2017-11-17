@@ -163,7 +163,7 @@ action :install do
           end
         end
       end
-      wrap_arry(_setup['reg']).each do |reg|
+      wrap_array(_setup['reg']).each do |reg|
         path = expand_reg(reg)
         type = reg.has_key?('type') ? reg['type'].to_sym : :string
         values = []
