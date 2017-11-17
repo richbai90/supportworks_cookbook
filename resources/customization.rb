@@ -60,6 +60,8 @@ action :install do
     val[:name] == 'InstallPath'
   end[0][:data]
 
+  x86_64 = node['kernel']['machine'] == 'x86_64'
+
   setup = load_setup(new_resource.custom_resources, swserver, core_services)
 
   setup["deploy"].each do |d|
