@@ -181,20 +181,27 @@ action :install do
           end
         end
       end
-      # wrap_array(_setup['reg']).each do |reg|
-      #   path = expand_reg(reg['path'])
-      #   type = reg.has_key?('type') ? reg['type'].to_sym : :string
-      #   values = []
-      #   wrap_array(reg['entry']).each do |entry|
-      #     values.push({:name => entry['name'], :type => type, :data => entry['value']})
-      #   end
-      #   registry_key path do
-      #     values values
-      #
-      #     architecture(x86_64 ? :i386 : :machine)
-      #   end
-      #
-      # end
+      wrap_array(_setup['reg']).each do |reg|
+        path = expand_reg(reg['path'])
+        type = reg.has_key?('type') ? reg['type'].to_sym : :string
+        values = []
+        wrap_array(reg['entry']).each do |entry|
+          if entry['value'] =~ /\+=\s*?/
+            entry.value = entry.value.split('+=').drop(1).join('').strip
+            entry['value'] = entry['value'] + (registry_get_values(path).select do |val|
+              val[:name] == entry['name']
+            end[0][:data])
+          end
+          values.push({:name => entry['name'], :type => type, :data => entry['value']})
+        end
+        unless values.empty?
+          registry_key path do
+            values values
+
+            architecture(x86_64 ? :i386 : :machine)
+          end
+        end
+      end
     end
   end
 
