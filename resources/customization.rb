@@ -169,8 +169,10 @@ action :install do
             orig_val = orig_key[:data]
             type = orig_key[:type]
             # make sure that this has not already been updated
-            unless orig_val.downcase.include?(entry['value'].downcase)
-              entry['value'] = orig_val +  entry['value']
+            if orig_val.downcase.include?(entry['value'].downcase)
+              entry['value'] = orig_val
+            else
+              entry['value'] = orig_val + entry['value']
             end
           end
           values.push({:name => entry['name'], :type => type, :data => entry['value']})
