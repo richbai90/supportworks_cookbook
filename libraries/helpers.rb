@@ -7,7 +7,7 @@ module Supportworks
 
     def wrap_array(o)
       # wrap o in an array unless it's already an array
-      if o.respond_to?(:each) && !respond_to?(:keys)
+      if o.respond_to?(:each) && !o.respond_to?(:has_key?)
         # is o an array? Return o
         o
       else
