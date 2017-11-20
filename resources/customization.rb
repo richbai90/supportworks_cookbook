@@ -138,32 +138,6 @@ action :install do
           end
         end
       end
-      wrap_array(_setup['execute']).each do |exec|
-        if exec.respond_to? :lines
-          # exec is a string so lets check if we need to use a ps template
-          if exec.lines.count > 1
-            # multi line string, need to use a ps1 template
-            powershell_script exec.lines.first do
-              code exec
-            end
-          else
-            # on liner, just use exec
-            execute exec do
-              command exec
-            end
-          end
-        else
-          # exec is an object wrap cmd in an array incase we have multiple cmds in one dir
-          wrap_array(exec['cmd']).each do |cmd|
-            execute cmd do
-              if exec['cwd']
-                cwd exec['cwd']
-              end
-              command exec['new_shell'] ? "start cmd /C cmd /C #{'"' + cmd + '"'}" : cmd
-            end
-          end
-        end
-      end
       (_setup['queries'] || []).each do |db, queries|
         queries.each do |query|
           tmpname = ::Dir::Tmpname.make_tmpname('sql', nil)
@@ -199,6 +173,32 @@ action :install do
             values values
 
             architecture(x86_64 ? :i386 : :machine)
+          end
+        end
+      end
+      wrap_array(_setup['execute']).each do |exec|
+        if exec.respond_to? :lines
+          # exec is a string so lets check if we need to use a ps template
+          if exec.lines.count > 1
+            # multi line string, need to use a ps1 template
+            powershell_script exec.lines.first do
+              code exec
+            end
+          else
+            # on liner, just use exec
+            execute exec do
+              command exec
+            end
+          end
+        else
+          # exec is an object wrap cmd in an array incase we have multiple cmds in one dir
+          wrap_array(exec['cmd']).each do |cmd|
+            execute cmd do
+              if exec['cwd']
+                cwd exec['cwd']
+              end
+              command exec['new_shell'] ? "start cmd /C cmd /C #{'"' + cmd + '"'}" : cmd
+            end
           end
         end
       end
