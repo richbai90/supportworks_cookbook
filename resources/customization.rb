@@ -164,7 +164,7 @@ action :install do
           end
         end
       end
-      wrap_array(_setup['queries']).each do |db, queries|
+      (_setup['queries'] || []).each do |db, queries|
         queries.each do |query|
           tmpname = ::Dir::Tmpname.make_tmpname('sql', nil)
           tmppath = ::File.join(Chef::Config['file_cache_path'], tmpname)
@@ -185,9 +185,9 @@ action :install do
         path = expand_reg(reg['path'])
         type = reg.has_key?('type') ? reg['type'].to_sym : :string
         values = []
-        wrap_array(reg['entry']).each do |entry|
+        wrap_array(reg['entries']).each do |entry|
           if entry['value'] =~ /\+=\s*?/
-            entry.value = entry.value.split('+=').drop(1).join('').strip
+            entry['value'] = entry['value'].split('+=').drop(1).join('').strip
             entry['value'] = entry['value'] + (registry_get_values(path).select do |val|
               val[:name] == entry['name']
             end[0][:data])
