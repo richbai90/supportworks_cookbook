@@ -169,7 +169,7 @@ action :install do
             orig_val = orig_key[:data]
             type = orig_key[:type]
             # make sure that this has not already been updated
-            unless orig_val =~ Regexp.new(entry['value'])
+            unless orig_val =~ Regexp.new(entry['value'].gsub('\\', '\\\\'))
               entry['value'] = entry['value'] + orig_val
             end
           end
