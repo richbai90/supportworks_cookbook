@@ -162,9 +162,12 @@ action :install do
         wrap_array(reg['entries']).each do |entry|
           if entry['value'] =~ /\+=\s*?/
             entry['value'] = entry['value'].split('+=').drop(1).join('').strip
-            orig_val = registry_get_values(path).select do |val|
+            orig_key = registry_get_values(path).select do |val|
               val[:name] == entry['name']
-            end[0][:data]
+            end[0]
+            # make sure that the data and type are correct
+            orig_val = orig_key[:data]
+            type = orig_key[:type]
             # make sure that this has not already been updated
             unless orig_val =~ Regexp.new(entry['value'])
               entry['value'] = entry['value'] + orig_val
