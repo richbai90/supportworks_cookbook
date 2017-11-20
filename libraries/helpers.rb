@@ -38,8 +38,6 @@ module Supportworks
 
     def backup_folder(swserver)
       @backup_folder = @backup_folder || File.join(swserver, "backup-#{Time.now.getutc.to_s.gsub(':', '.').gsub(' ', '_')}")
-      @backup_in_progress = true
-      @backup_folder
     end
 
     def wait_for_db_schema
@@ -116,6 +114,7 @@ module Supportworks
         FileUtils.mkdir(backup_folder(swserver))
         @backup_folder = backup_folder(swserver)
         unless @backup_in_progress
+          @backup_in_progress = true
           ::Dir.chdir(mysqlpath) do
             `mysqldump.exe --add-drop-table --all-databases -u #{mysqluser} --password="#{mysqlpass}" --port 5002 > "#{::File.join(backup_folder(swserver), 'backup.sql')}"`
           end
