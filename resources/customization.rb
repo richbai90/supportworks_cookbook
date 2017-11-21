@@ -211,12 +211,28 @@ action :install do
           else
             # exec is an object wrap cmd in an array in case we have multiple cmds in one dir
             wrap_array(exec['cmd']).each do |cmd|
-              execute cmd do
-                if exec['cwd']
-                  cwd exec['cwd']
+              if cmd =~ /(\.msi)|(\.exe)$/
+                # need to handle msi or exe execute
+                windows_package exec do
+                  action :install
+                  source cmd
+                  if exec['ignore_errors']
+                    ignore_failure true
+                  end
                 end
-                command exec['new_shell'] ? "start cmd /C cmd /C #{'"' + cmd + '"'}" : cmd
+              else
+                # not msi or exe, just use exec
+                execute cmd do
+                  if exec['cwd']
+                    cwd exec['cwd']
+                  end
+                  if exec['ignore_errors']
+                    ignore_failure true
+                  end
+                  command exec['new_shell'] ? "start cmd /C cmd /C #{'"' + cmd + '"'}" : cmd
+                end
               end
+
             end
           end
         end
