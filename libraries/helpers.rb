@@ -56,7 +56,7 @@ module Supportworks
 
     def replace_vars_in_setup(swserver, core_services, setup = nil)
       setup = @setup if setup.nil?
-      unless setup.nil
+      if setup.respond_to? :each
         setup.each do |k, v|
           val = (v || v === false) || k
           if val.respond_to? :each
