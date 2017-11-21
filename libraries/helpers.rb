@@ -56,16 +56,18 @@ module Supportworks
 
     def replace_vars_in_setup(swserver, core_services, setup = nil)
       setup = @setup if setup.nil?
-      setup.each do |k, v|
-        val = (v || v === false) || k
-        if val.respond_to? :each
-          replace_vars_in_setup(swserver, core_services, val)
-        else
-          begin
-            val.gsub!('%SWSERVER%', swserver)
-            val.gsub!('%SWCS%', core_services)
-          rescue NoMethodError
-            # not a string so who cares
+      if setup.respond_to? :each
+        setup.each do |k, v|
+          val = (v || v === false) || k
+          if val.respond_to? :each
+            replace_vars_in_setup(swserver, core_services, val)
+          else
+            begin
+              val.gsub!('%SWSERVER%', swserver)
+              val.gsub!('%SWCS%', core_services)
+            rescue NoMethodError
+              # not a string so who cares
+            end
           end
         end
       end
@@ -105,7 +107,7 @@ module Supportworks
       end
     end
 
-    def backup_and_copy(resource, swserver, core_services, mysqlpath, mysqluser, mysqlpass)
+    def backup_and_copy(resource, swserver, core_services, mysqlpath, mysqluser, mysqlpass, _then)
       require 'time'
       resource = File.realpath(resource).gsub('\\', '/')
       resources = Dir[resource + '/**/*']
@@ -124,19 +126,19 @@ module Supportworks
       end
 
       backup_folders = resources.select do |_resource|
-        File.directory?(_resource) && !((_resource =~ /node_modules/) || (_resource =~ /__CS__/))
+        File.directory?(_resource) && !((_resource =~ /node_modules/) || (_resource =~ /__CS__/) || (_then ? _resource =~ Regexp.new(_then) : false))
       end
 
       cs_folders = resources.select do |_resource|
-        File.directory?(_resource) && _resource =~ /__CS__/ && !(_resource == '__CS__')
+        File.directory?(_resource) && _resource =~ /__CS__/ && !(_resource == '__CS__' || (_then ? _resource =~ Regexp.new(_then) : false))
       end
 
       backup_files = resources.select do |_resource|
-        !(File.directory?(_resource) || (_resource =~ /node_modules/) || (_resource =~ /__CS__/))
+        !(File.directory?(_resource) || (_resource =~ /node_modules/) || (_resource =~ /__CS__/) || (_then ? _resource =~ Regexp.new(_then) : false) || (_resource =~ /readme/i))
       end
 
       cs_files = resources.select do |_resource|
-        !File.directory?(_resource) && _resource =~ /__CS__/
+        !(File.directory?(_resource) || (_then ? _resource =~ Regexp.new(_then) : false)) && _resource =~ /__CS__/
       end
 
       backup_folders.each do |f|

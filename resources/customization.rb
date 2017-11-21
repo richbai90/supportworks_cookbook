@@ -80,147 +80,175 @@ action :install do
     end
   end
 
-  setup["deploy"].each do |d|
+  setup['deploy'].each_with_index do |d, index|
     ::FileUtils.chdir(new_resource.custom_resources) do
       _cwd = Dir.pwd
+      if d['then']
+        setup['deploy'].insert(index + 1, {'package' => ::File.join(d['package'], d['then'])})
+      end
       _setup = load_setup(d["package"], swserver, core_services)
-      begin
-        if _setup['prereq'].respond_to?(:each)
-          _setup['prereq'].each do |prereq|
+      if _setup.respond_to? :[]
+        if _setup.has_key?('prereq')
+          if _setup['prereq'].respond_to?(:each)
+            _setup['prereq'].each do |prereq|
+              ruby_block "wait for #{prereq}" do
+                block do
+                  p "Waiting for the creation of #{prereq}"
+                  until ::File.exists?(prereq)
+                    sleep 5
+                  end
+                end
+              end
+            end
+          else
+            prereq = _setup['prereq']
+
             ruby_block "wait for #{prereq}" do
               block do
-                p 'Waiting for the creation of ' + prereq
+                p "Waiting for the creation of #{prereq}"
                 until ::File.exists?(prereq)
                   sleep 5
                 end
               end
             end
           end
-        else
-          prereq = _setup['prereq']
-          ruby_block "wait for #{prereq}" do
-            block do
-              p 'Waiting for the creation of ' + prereq
-              until ::File.exists?(prereq)
-                sleep 5
+        end
+        ruby_block "Backup and copy files from #{d["package"]}" do
+          block do
+            backup_and_copy(::File.join(_cwd, d["package"]), swserver, core_services, ::File.join(mysql_path, 'bin'), swdata_db_user || cache_db_user, swdata_db_password || cache_db_password, d['then'])
+          end
+        end
+
+        ruby_block "Apply Schema Changes" do
+          block do
+            if _setup.has_key?('db_schema') && _setup['db_schema'].respond_to?(:empty?) && !_setup['db_schema'].empty?
+              p 'Applying Schema Changes'
+              ::Dir.chdir(::File.join(swserver, 'bin')) do
+                export_schema = ::File.join(Chef::Config['file_cache_path'], 'ex_dbschema.xml').gsub('/', "\\")
+                system("start cmd /k cmd /C swdbconf.exe -import \"#{_setup["db_schema"].gsub('/', '\\')}\"  -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
+                wait_for_db_schema
+                system("start cmd /k cmd /C swdbconf.exe -s Localhost -app \"swserverservice\" -tdb swdata -log chef_dbconf.log -pipelog -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
+                wait_for_db_schema
+                system("start cmd /k cmd /C swdbconf.exe -export \"#{export_schema}\" -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
+                wait_for_db_schema
+                system("start cmd /k cmd /C swdbconf.exe -import \"#{export_schema}\"  -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
+                wait_for_db_schema
+                system("start cmd /k cmd /C swdbconf.exe -s Localhost -app \"swserverservice\" -tdb swdata -log chef_dbconf.log -pipelog -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
+                wait_for_db_schema
               end
             end
           end
         end
-      rescue TypeError
-        p _setup['prereq']
-      end
+        (_setup['queries'] || []).each do |db, queries|
+          queries.each do |query|
+            tmpname = ::Dir::Tmpname.make_tmpname('sql', nil)
+            tmppath = ::File.join(Chef::Config['file_cache_path'], tmpname)
+            file tmppath do
+              content <<~sql
+                use #{db};
+                #{query};
+              sql
+            end
 
-
-      ruby_block "Backup and copy files from #{d["package"]}" do
-        block do
-          backup_and_copy(::File.join(_cwd, d["package"]), swserver, core_services, ::File.join(mysql_path, 'bin'), swdata_db_user || cache_db_user, swdata_db_password || cache_db_password)
-        end
-      end
-
-      ruby_block "Apply Schema Changes" do
-        block do
-          if _setup.has_key?('db_schema') && _setup['db_schema'].respond_to?(:empty?) && !_setup['db_schema'].empty?
-            p 'Applying Schema Changes'
-            ::Dir.chdir(::File.join(swserver, 'bin')) do
-              export_schema = ::File.join(Chef::Config['file_cache_path'], 'ex_dbschema.xml').gsub('/', "\\")
-              system("start cmd /k cmd /C swdbconf.exe -import \"#{_setup["db_schema"].gsub('/', '\\')}\"  -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
-              wait_for_db_schema
-              system("start cmd /k cmd /C swdbconf.exe -s Localhost -app \"swserverservice\" -tdb swdata -log chef_dbconf.log -pipelog -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
-              wait_for_db_schema
-              system("start cmd /k cmd /C swdbconf.exe -export \"#{export_schema}\" -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
-              wait_for_db_schema
-              system("start cmd /k cmd /C swdbconf.exe -import \"#{export_schema}\"  -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
-              wait_for_db_schema
-              system("start cmd /k cmd /C swdbconf.exe -s Localhost -app \"swserverservice\" -tdb swdata -log chef_dbconf.log -pipelog -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
-              wait_for_db_schema
+            execute query do
+              cwd ::File.join(mysql_path, 'bin')
+              command "mysql --port=5002 -u #{swdata_db_user || cache_db_user} --password=\"#{swdata_db_password || cache_db_password}\" < #{'"' + tmppath + '"'}"
             end
           end
         end
-      end
-      (_setup['queries'] || []).each do |db, queries|
-        queries.each do |query|
-          tmpname = ::Dir::Tmpname.make_tmpname('sql', nil)
-          tmppath = ::File.join(Chef::Config['file_cache_path'], tmpname)
-          file tmppath do
-            content <<~sql
-              use #{db};
-              #{query};
-            sql
+        wrap_array(_setup['reg']).each do |reg|
+          path = expand_reg(reg['path'])
+          type = reg.has_key?('type') ? reg['type'].to_sym : :string
+          values = []
+          wrap_array(reg['entries']).each do |entry|
+            if entry['value'] =~ /\+=\s*?/
+              entry['value'] = entry['value'].split('+=').drop(1).join('').strip
+              orig_key = registry_get_values(path).select do |val|
+                val[:name] == entry['name']
+              end[0]
+              # make sure that the data and type are correct
+              orig_val = orig_key[:data]
+              type = orig_key[:type]
+              # make sure that this has not already been updated
+              if orig_val.downcase.include?(entry['value'].downcase)
+                entry['value'] = orig_val
+              else
+                entry['value'] = orig_val + entry['value']
+              end
+            end
+            values.push({:name => entry['name'], :type => type, :data => entry['value']})
           end
+          unless values.empty?
+            registry_key path do
+              values values
 
-          execute query do
-            cwd ::File.join(mysql_path, 'bin')
-            command "mysql --port=5002 -u #{swdata_db_user || cache_db_user} --password=\"#{swdata_db_password || cache_db_password}\" < #{'"' + tmppath + '"'}"
+              architecture(x86_64 ? :i386 : :machine)
+            end
           end
         end
-      end
-      wrap_array(_setup['reg']).each do |reg|
-        path = expand_reg(reg['path'])
-        type = reg.has_key?('type') ? reg['type'].to_sym : :string
-        values = []
-        wrap_array(reg['entries']).each do |entry|
-          if entry['value'] =~ /\+=\s*?/
-            entry['value'] = entry['value'].split('+=').drop(1).join('').strip
-            orig_key = registry_get_values(path).select do |val|
-              val[:name] == entry['name']
-            end[0]
-            # make sure that the data and type are correct
-            orig_val = orig_key[:data]
-            type = orig_key[:type]
-            # make sure that this has not already been updated
-            if orig_val.downcase.include?(entry['value'].downcase)
-              entry['value'] = orig_val
+        wrap_array(_setup['execute']).each do |exec|
+          if exec.respond_to? :lines
+            # exec is a string so lets check if we need to use a ps template
+            if exec.lines.count > 1
+              # multi line string, need to use a ps1 template
+              powershell_script exec.lines.first do
+                code exec
+              end
             else
-              entry['value'] = orig_val + entry['value']
-            end
-          end
-          values.push({:name => entry['name'], :type => type, :data => entry['value']})
-        end
-        unless values.empty?
-          registry_key path do
-            values values
-
-            architecture(x86_64 ? :i386 : :machine)
-          end
-        end
-      end
-      wrap_array(_setup['execute']).each do |exec|
-        if exec.respond_to? :lines
-          # exec is a string so lets check if we need to use a ps template
-          if exec.lines.count > 1
-            # multi line string, need to use a ps1 template
-            powershell_script exec.lines.first do
-              code exec
+              if exec =~ /(\.msi)|(\.exe)$/
+                # need to handle msi or exe execute
+                windows_package exec do
+                  action :install
+                  source exec
+                end
+              else
+                # one liner, not msi or exe, just use exec
+                execute exec do
+                  command exec
+                end
+              end
             end
           else
-            if exec =~ /(\.msi)$/
-              # need to handle msi execute
-              windows_package exec do
-                action :install
-                source exec
+            # exec is an object wrap cmd in an array in case we have multiple cmds in one dir
+            wrap_array(exec['cmd']).each do |cmd|
+              if cmd =~ /(\.msi)|(\.exe)$/
+                # need to handle msi or exe execute
+                windows_package cmd do
+                  action :install
+                  source cmd
+                  if exec['ignore_errors']
+                    ignore_failure true
+                  end
+                  if exec['type']
+                    installer_type exec['type'].to_sym
+                  end
+                  if exec['if']
+                    only_if exec['if']
+                  end
+                end
+              else
+                # not msi or exe, just use exec
+                execute cmd do
+                  if exec['cwd']
+                    cwd exec['cwd']
+                  end
+                  if exec['ignore_errors']
+                    ignore_failure true
+                  end
+                  if exec['if']
+                    only_if exec['if']
+                  end
+                  command exec['new_shell'] ? "start cmd /C cmd /C #{'"' + cmd + '"'}" : cmd
+                end
               end
-            elsif exec =~/(\.exe)$/
-              # exe file needs special handling
-              execute exec do
-                command "start /WAIT #{ '"' + exec + '"'}"
-              end
-            else
-              # one liner, not msi or exe, just use exec
-              execute exec do
-                command exec
-              end
+
             end
           end
-        else
-          # exec is an object wrap cmd in an array in case we have multiple cmds in one dir
-          wrap_array(exec['cmd']).each do |cmd|
-            execute cmd do
-              if exec['cwd']
-                cwd exec['cwd']
-              end
-              command exec['new_shell'] ? "start cmd /C cmd /C #{'"' + cmd + '"'}" : cmd
-            end
+        end
+      else
+        ruby_block "Backup and copy files from #{d["package"]}" do
+          block do
+            backup_and_copy(::File.join(_cwd, d["package"]), swserver, core_services, ::File.join(mysql_path, 'bin'), swdata_db_user || cache_db_user, swdata_db_password || cache_db_password, d['then'])
           end
         end
       end
