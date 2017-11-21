@@ -213,7 +213,7 @@ action :install do
             wrap_array(exec['cmd']).each do |cmd|
               if cmd =~ /(\.msi)|(\.exe)$/
                 # need to handle msi or exe execute
-                windows_package exec do
+                windows_package cmd do
                   action :install
                   source cmd
                   if exec['ignore_errors']
