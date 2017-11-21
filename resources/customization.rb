@@ -84,7 +84,7 @@ action :install do
     ::FileUtils.chdir(new_resource.custom_resources) do
       _cwd = Dir.pwd
       if d['then']
-        setup['deploy'].insert(index + 1, {'package' => File.join(d['package'], d['then'])})
+        setup['deploy'].insert(index + 1, {'package' => ::File.join(d['package'], d['then'])})
       end
       _setup = load_setup(d["package"], swserver, core_services)
       begin
