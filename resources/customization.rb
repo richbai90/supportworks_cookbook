@@ -65,15 +65,17 @@ action :install do
   setup = load_setup(new_resource.custom_resources, swserver, core_services)
   ::FileUtils.chdir(new_resource.custom_resources) do
     setup['deploy'].each do |d|
-      setup_file = ::File.realpath(::File.join(d['package'], 'setup.yml'))
-      ::File.open(setup_file) do |infile|
-        l = 0
-        while (line = infile.gets)
-          l = l + 1
-          if line =~ /CHANGE_ME/i
-            class NotReadyError < StandardError
+      setup_files = ::Dir[::File.join(::File.realpath(d['package']), '**', 'setup.yml')]
+      setup_files.each do |setup_file|
+        ::File.open(setup_file) do |infile|
+          l = 0
+          while (line = infile.gets)
+            l = l + 1
+            if line =~ /CHANGE_ME/i
+              class NotReadyError < StandardError
+              end
+              raise(NotReadyError, "ONE ORE MORE SETUP FILES ARE NOT READY TO BE DEPLOYED IN #{setup_file} LINE #{l} (CHANGE_ME)")
             end
-            raise(NotReadyError, "ONE ORE MORE SETUP FILES ARE NOT READY TO BE DEPLOYED IN #{setup_file} LINE #{l} (CHANGE_ME)")
           end
         end
       end
