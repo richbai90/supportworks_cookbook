@@ -195,16 +195,11 @@ action :install do
                 code exec
               end
             else
-              if exec =~ /(\.msi)$/
-                # need to handle msi execute
+              if exec =~ /(\.msi)|(\.exe)$/
+                # need to handle msi or exe execute
                 windows_package exec do
                   action :install
                   source exec
-                end
-              elsif exec =~/(\.exe)$/
-                # exe file needs special handling
-                execute exec do
-                  command "start /WAIT #{ '"' + exec + '"'}"
                 end
               else
                 # one liner, not msi or exe, just use exec

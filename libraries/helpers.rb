@@ -126,19 +126,19 @@ module Supportworks
       end
 
       backup_folders = resources.select do |_resource|
-        File.directory?(_resource) && !((_resource =~ /node_modules/) || (_resource =~ /__CS__/) || (_then ? Regexp.new(_then) : false))
+        File.directory?(_resource) && !((_resource =~ /node_modules/) || (_resource =~ /__CS__/) || (_then ? _resource =~ Regexp.new(_then) : false))
       end
 
       cs_folders = resources.select do |_resource|
-        File.directory?(_resource) && _resource =~ /__CS__/ && !(_resource == '__CS__' || (_then ? Regexp.new(_then) : false))
+        File.directory?(_resource) && _resource =~ /__CS__/ && !(_resource == '__CS__' || (_then ? _resource =~ Regexp.new(_then) : false))
       end
 
       backup_files = resources.select do |_resource|
-        !(File.directory?(_resource) || (_resource =~ /node_modules/) || (_resource =~ /__CS__/) || (_then ? Regexp.new(_then) : false) || (_resource =~ /readme/i))
+        !(File.directory?(_resource) || (_resource =~ /node_modules/) || (_resource =~ /__CS__/) || (_then ? _resource =~ Regexp.new(_then) : false) || (_resource =~ /readme/i))
       end
 
       cs_files = resources.select do |_resource|
-        !(File.directory?(_resource) || (_then ? Regexp.new(_then) : false)) && _resource =~ /__CS__/
+        !(File.directory?(_resource) || (_then ? _resource =~ Regexp.new(_then) : false)) && _resource =~ /__CS__/
       end
 
       backup_folders.each do |f|
