@@ -194,13 +194,26 @@ action :install do
               code exec
             end
           else
-            # on liner, just use exec
-            execute exec do
-              command exec
+            if exec =~ /(\.msi)$/
+              # need to handle msi execute
+              windows_package exec do
+                action :install
+                source exec
+              end
+            elsif exec =~/(\.exe)$/
+              # exe file needs special handling
+              execute exec do
+                command "start /WAIT #{ '"' + exec + '"'}"
+              end
+            else
+              # one liner, not msi or exe, just use exec
+              execute exec do
+                command exec
+              end
             end
           end
         else
-          # exec is an object wrap cmd in an array incase we have multiple cmds in one dir
+          # exec is an object wrap cmd in an array in case we have multiple cmds in one dir
           wrap_array(exec['cmd']).each do |cmd|
             execute cmd do
               if exec['cwd']
