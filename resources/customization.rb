@@ -80,7 +80,7 @@ action :install do
     end
   end
 
-  setup["deploy"].each_with_index do |d, index|
+  setup['deploy'].each_with_index do |d, index|
     ::FileUtils.chdir(new_resource.custom_resources) do
       _cwd = Dir.pwd
       if d['then']
@@ -218,6 +218,12 @@ action :install do
                 command exec['new_shell'] ? "start cmd /C cmd /C #{'"' + cmd + '"'}" : cmd
               end
             end
+          end
+        end
+      else
+        ruby_block "Backup and copy files from #{d["package"]}" do
+          block do
+            backup_and_copy(::File.join(_cwd, d["package"]), swserver, core_services, ::File.join(mysql_path, 'bin'), swdata_db_user || cache_db_user, swdata_db_password || cache_db_password, d['then'])
           end
         end
       end
