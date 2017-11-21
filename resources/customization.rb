@@ -222,6 +222,9 @@ action :install do
                   if exec['type']
                     installer_type exec['type'].to_sym
                   end
+                  if exec['if']
+                    only_if exec['if']
+                  end
                 end
               else
                 # not msi or exe, just use exec
@@ -232,7 +235,9 @@ action :install do
                   if exec['ignore_errors']
                     ignore_failure true
                   end
-
+                  if exec['if']
+                    only_if exec['if']
+                  end
                   command exec['new_shell'] ? "start cmd /C cmd /C #{'"' + cmd + '"'}" : cmd
                 end
               end
