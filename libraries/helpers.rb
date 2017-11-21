@@ -56,16 +56,18 @@ module Supportworks
 
     def replace_vars_in_setup(swserver, core_services, setup = nil)
       setup = @setup if setup.nil?
-      setup.each do |k, v|
-        val = (v || v === false) || k
-        if val.respond_to? :each
-          replace_vars_in_setup(swserver, core_services, val)
-        else
-          begin
-            val.gsub!('%SWSERVER%', swserver)
-            val.gsub!('%SWCS%', core_services)
-          rescue NoMethodError
-            # not a string so who cares
+      unless setup.nil
+        setup.each do |k, v|
+          val = (v || v === false) || k
+          if val.respond_to? :each
+            replace_vars_in_setup(swserver, core_services, val)
+          else
+            begin
+              val.gsub!('%SWSERVER%', swserver)
+              val.gsub!('%SWCS%', core_services)
+            rescue NoMethodError
+              # not a string so who cares
+            end
           end
         end
       end
