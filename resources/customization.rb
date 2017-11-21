@@ -88,7 +88,7 @@ action :install do
       end
       _setup = load_setup(d["package"], swserver, core_services)
       if _setup.respond_to? :[]
-        begin
+        if _setup.has_key?('prereq')
           if _setup['prereq'].respond_to?(:each)
             _setup['prereq'].each do |prereq|
               ruby_block "wait for #{prereq}" do
@@ -112,8 +112,6 @@ action :install do
               end
             end
           end
-        rescue TypeError
-          p _setup['prereq']
         end
         ruby_block "Backup and copy files from #{d["package"]}" do
           block do
