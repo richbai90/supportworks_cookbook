@@ -220,7 +220,7 @@ action :install do
                     ignore_failure true
                   end
                   if exec['type']
-                    type exec['type'].to_sym
+                    installer_type exec['type'].to_sym
                   end
                 end
               else
