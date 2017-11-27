@@ -55,6 +55,9 @@ module Supportworks
     end
 
     def replace_vars_in_setup(swserver, core_services, setup = nil)
+      # strip the trailing backslash
+      swserver = swserver[/.*(?=\\$)/] || swserver
+      core_services = core_services[/.*(?=\\$)/] || core_services
       setup = @setup if setup.nil?
       if setup.respond_to? :each
         setup.each do |k, v|
