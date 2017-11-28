@@ -20,9 +20,11 @@ module Supportworks
         if opts[:loose]
           root_in_doc = in_doc.deep_find(root)
           fragment_root = fragment[root]
-          root_in_doc.extend Hashie::Extensions::DeepMerge
-          # if we merge the fragment with the document, and they are the same, then there are only values and attributes changed
-          return root_in_doc.deep_merge(fragment_root) == fragment_root
+		  unless root_in_doc.nil? or fragment_root.nil?
+            root_in_doc.extend Hashie::Extensions::DeepMerge
+            # if we merge the fragment with the document, and they are the same, then there are only values and attributes changed
+            return root_in_doc.deep_merge(fragment_root) == fragment_root
+		  end
         end
 
         in_doc.deep_find(root) == fragment[root]
