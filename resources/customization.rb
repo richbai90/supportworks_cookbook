@@ -163,7 +163,6 @@ action :install do
             end
 
 
-
             execute query do
               cwd ::File.join(mysql_path, 'bin')
               command "mysql --port=5002 -u #{swdata_db_user || cache_db_user} --password=\"#{swdata_db_password || cache_db_password}\" < #{'"' + tmppath + '"'}"
@@ -257,7 +256,9 @@ action :install do
               end
             end
             wrap_array(_setup['xml']).each do |xml|
-              update_xml(xml['path'], xml['map'])
+              ruby_block "Update XML" do
+                block { update_xml(xml['path'], xml['map']) }
+              end
             end
           end
         end
