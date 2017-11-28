@@ -20,7 +20,7 @@ module Supportworks
 
       end
 
-      conf = Nokogiri::XML(File.open(path))
+      conf = Nokogiri::XML(File.open(path, :external_encoding => 'UTF-8', :internal_encoding => 'UTF-8'))
       wrap_array(maps).each do |map|
         selection = conf.at_css(map['select'])
         wrap_array(map['add_siblings']).each do |elem|
