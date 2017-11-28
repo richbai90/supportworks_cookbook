@@ -5,7 +5,7 @@ module Supportworks
     extend self
     attr_reader :setup
 
-    def update_xml(path, map, selection)
+    def update_xml(path, maps)
       require 'nokogiri'
 
       def elem_exists?(elem, in_doc, exists = false)
@@ -21,26 +21,28 @@ module Supportworks
       end
 
       conf = Nokogiri::XML(File.open(path))
-      selection = conf.at_css(selection)
-      wrap_array(map['add_siblings']).each do |elem|
-        unless elem_exists?(elem, selection)
-          selection.add_next_sibling(elem)
+      wrap_array(maps).each do |map|
+        selection = conf.at_css(map['select'])
+        wrap_array(map['add_siblings']).each do |elem|
+          unless elem_exists?(elem, selection)
+            selection.add_next_sibling(elem)
+          end
         end
-      end
-      wrap_array(map['add_children']).each do |elem|
-        unless elem_exists?(elem, selection)
-          selection.children.first.add_next_sibling(elem)
+        wrap_array(map['add_children']).each do |elem|
+          unless elem_exists?(elem, selection)
+            selection.children.first.add_next_sibling(elem)
+          end
         end
-      end
-      wrap_array(map['update_text']).each do |text|
-        selection.content = text
-      end
-      wrap_array(map['change_attr']).each do |attr|
-        selection[attr['attr']] = attr['to']
+        wrap_array(map['update_text']).each do |text|
+          selection.content = text
+        end
+        wrap_array(map['change_attr']).each do |attr|
+          selection[attr['attr']] = attr['to']
+        end
       end
 
       File.open(path, 'w') do |f|
-        f.write(selection.to_xml)
+        f.write(conf.to_xml)
       end
     end
 

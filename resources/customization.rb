@@ -257,7 +257,7 @@ action :install do
               end
             end
             wrap_array(_setup['xml']).each do |xml|
-              update_xml(xml['path'], xml['map'], xml['select'])
+              update_xml(xml['path'], xml['map'])
             end
           end
         end
