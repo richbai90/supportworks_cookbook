@@ -8,7 +8,7 @@ module Supportworks
     def update_xml(path, maps)
       require 'nokogiri'
 
-      def elem_exists?(elem, in_doc, exists = false)
+      def elem_exists?(elem, in_doc, opts = {})
         require 'xmlsimple'
         require 'hashie'
         fragment = XmlSimple.xml_in(elem, {:force_array => false, :KeepRoot => true})
@@ -16,6 +16,15 @@ module Supportworks
         root = fragment.keys.first
 
         in_doc.extend Hashie::Extensions::DeepFind
+
+        if opts[:loose]
+          root_in_doc = in_doc.deep_find(root)
+          fragment_root = fragment[root]
+          root_in_doc.extend Hashie::Extensions::DeepMerge
+          # if we merge the fragment with the document, and they are the same, then there are only values and attributes changed
+          return root_in_doc.deep_merge(fragment_root) == fragment_root
+        end
+
         in_doc.deep_find(root) == fragment[root]
 
       end
@@ -28,13 +37,27 @@ module Supportworks
         wrap_array(maps).each do |map|
           selection = conf.at_css(map['select'])
           wrap_array(map['add_siblings']).each do |elem|
-            unless elem_exists?(elem, selection)
-              selection.add_next_sibling(elem)
+            if elem.respond_to?([]) and elem['loose_compare']
+              unless elem_exists?(elem['sibling'], selection, :loose => true)
+                selection.add_next_sibling(elem['sibling'])
+              end
+            else
+              unless elem_exists?(elem, selection)
+                selection.add_next_sibling(elem)
+              end
             end
+
           end
           wrap_array(map['add_children']).each do |elem|
-            unless elem_exists?(elem, selection)
-              selection.children.first.add_next_sibling(elem)
+            if elem.respond_to?([]) and elem['loose_compare']
+              unless elem_exists?(elem['sibling'], selection, :loose => true)
+                selection.children.first.add_next_sibling(elem['sibling'])
+              end
+            else
+
+              unless elem_exists?(elem, selection.children.first)
+                selection.children.first.add_next_sibling(elem)
+              end
             end
           end
           wrap_array(map['update_text']).each do |text|
