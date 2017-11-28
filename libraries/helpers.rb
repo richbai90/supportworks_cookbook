@@ -5,6 +5,45 @@ module Supportworks
     extend self
     attr_reader :setup
 
+    def update_config(path, map)
+      require 'nokogiri'
+
+      def elem_exists?(elem, in_doc, exists = false)
+        require 'xmlsimple'
+        require 'hashie'
+        fragment = XmlSimple.xml_in(elem, {:force_array => false, :KeepRoot => true})
+        in_doc = XmlSimple.xml_in(in_doc.to_xml, {:force_array => false, :KeepRoot => true})
+        root = fragment.keys.first
+
+        in_doc.extend Hashie::Extensions::DeepFind
+        in_doc.deep_find(root) == fragment[root]
+
+      end
+
+      conf = Nokogiri::XML(File.open(path))
+      selection = conf.at_css(path.select)
+      wrap_array(map['add_siblings']).each do |elem|
+        unless elem_exists?(elem, selection)
+          selection.add_next_sibling(elem)
+        end
+      end
+      wrap_array(map['add_children']).each do |elem|
+        unless elem_exists?(elem, selection)
+          selection.children.first.add_next_sibling(elem)
+        end
+      end
+      wrap_array(map['update_text']).each do |text|
+        selection.content = text
+      end
+      wrap_array(map['change_attr']).each do |attr|
+        selection[attr['attr']] = attr['to']
+      end
+
+      File.open(path, 'w') do |f|
+        f.write(selection.to_xml)
+      end
+    end
+
     def wrap_array(o)
       # wrap o in an array unless it's already an array
       if o.respond_to?(:each) && !o.respond_to?(:has_key?)
@@ -66,8 +105,10 @@ module Supportworks
             replace_vars_in_setup(swserver, core_services, val)
           else
             begin
+              require 'securerandom'
               val.gsub!('%SWSERVER%', swserver)
               val.gsub!('%SWCS%', core_services)
+              val.gsub!('%RAND%', SecureRamdom.base64)
             rescue NoMethodError
               # not a string so who cares
             end
@@ -159,6 +200,7 @@ module Supportworks
       cs_files.each do |f|
         do_backup_and_copy(f, backup_folder(swserver), core_services, resource, false)
       end
+      @backup_folder
     end
 
     def csreg(node)
