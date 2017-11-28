@@ -12,7 +12,7 @@ module Supportworks
         require 'xmlsimple'
         require 'hashie'
         fragment = XmlSimple.xml_in(elem, {:force_array => false, :KeepRoot => true})
-        in_doc = XmlSimple.xml_in(in_doc.to_xml, {:force_array => false, :KeepRoot => true})
+        in_doc = XmlSimple.xml_in(in_doc.to_xml.encode('UTF-8', 'Windows-1252'), {:force_array => false, :KeepRoot => true})
         root = fragment.keys.first
 
         in_doc.extend Hashie::Extensions::DeepFind
