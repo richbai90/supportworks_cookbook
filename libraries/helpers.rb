@@ -108,7 +108,7 @@ module Supportworks
               require 'securerandom'
               val.gsub!('%SWSERVER%', swserver)
               val.gsub!('%SWCS%', core_services)
-              val.gsub!('%RAND%', SecureRamdom.base64)
+              val.gsub!('%RAND%', SecureRandom.base64)
             rescue NoMethodError
               # not a string so who cares
             end
