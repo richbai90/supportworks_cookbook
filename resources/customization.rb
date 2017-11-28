@@ -117,7 +117,17 @@ action :install do
         end
         ruby_block "Backup and copy files from #{d["package"]}" do
           block do
-            backup_and_copy(::File.join(_cwd, d["package"]), swserver, core_services, ::File.join(mysql_path, 'bin'), swdata_db_user || cache_db_user, swdata_db_password || cache_db_password, d['then'])
+            xmls = wrap_array(_setup['xml'])
+            backup_folder = backup_and_copy(::File.join(_cwd, d["package"]), swserver, core_services, ::File.join(mysql_path, 'bin'), swdata_db_user || cache_db_user, swdata_db_password || cache_db_password, d['then'])
+            unless xmls.empty?
+              xmls.each do |xml|
+                backup_xml = xml['path'].gsub(swserver, '').gsub(core_services, '')
+                # remove leading and trailing slashes if such exist
+                backup_xml = backup_xml[/.*(?=^\\)/] || backup_xml
+                backup_xml = backup_xml[/(?<=^\\).*/] || backup_xml
+                ::FileUtils.cp_r(xml['path'], ::File.join(backup_folder, backup_xml))
+              end
+            end
           end
         end
 
@@ -151,6 +161,7 @@ action :install do
                 #{query};
               sql
             end
+
 
             execute query do
               cwd ::File.join(mysql_path, 'bin')
@@ -243,7 +254,11 @@ action :install do
                   command exec['new_shell'] ? "start cmd /C cmd /C #{'"' + cmd + '"'}" : cmd
                 end
               end
-
+            end
+            wrap_array(_setup['xml']).each do |xml|
+              ruby_block "Update XML" do
+                block { update_xml(xml['path'], xml['map']) }
+              end
             end
           end
         end
