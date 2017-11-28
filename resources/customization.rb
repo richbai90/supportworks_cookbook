@@ -255,7 +255,9 @@ action :install do
                   command exec['new_shell'] ? "start cmd /C cmd /C #{'"' + cmd + '"'}" : cmd
                 end
               end
-
+            end
+            wrap_array(_setup['xml']).each do |xml|
+              update_xml(xml['path'], xml['map'])
             end
           end
         end

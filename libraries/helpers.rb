@@ -5,7 +5,7 @@ module Supportworks
     extend self
     attr_reader :setup
 
-    def update_config(path, map)
+    def update_xml(path, map)
       require 'nokogiri'
 
       def elem_exists?(elem, in_doc, exists = false)
