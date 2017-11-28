@@ -20,6 +20,7 @@ module Supportworks
 
       end
 
+      conf = nil
       File.open(path, 'r') do |f|
         conf = Nokogiri::XML::Document.parse(f.read, nil, 'Windows-1252')
         wrap_array(maps).each do |map|
@@ -43,8 +44,10 @@ module Supportworks
         end
       end
 
-      File.open(path, 'w') do |f|
-        f.write(conf.to_xml)
+      unless conf.nil?
+        File.open(path, 'w') do |f|
+          f.write(conf.to_xml)
+        end
       end
     end
 
