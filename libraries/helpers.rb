@@ -5,7 +5,7 @@ module Supportworks
     extend self
     attr_reader :setup
 
-    def update_xml(path, map)
+    def update_xml(path, map, selection)
       require 'nokogiri'
 
       def elem_exists?(elem, in_doc, exists = false)
@@ -21,7 +21,7 @@ module Supportworks
       end
 
       conf = Nokogiri::XML(File.open(path))
-      selection = conf.at_css(path.select)
+      selection = conf.at_css(selection)
       wrap_array(map['add_siblings']).each do |elem|
         unless elem_exists?(elem, selection)
           selection.add_next_sibling(elem)
