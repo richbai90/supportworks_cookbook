@@ -50,8 +50,8 @@ module Supportworks
           end
           wrap_array(map['add_children']).each do |elem|
             if elem.respond_to?([]) and elem['loose_compare']
-              unless elem_exists?(elem['sibling'], selection, :loose => true)
-                selection.children.first.add_next_sibling(elem['sibling'])
+              unless elem_exists?(elem['child'], selection, :loose => true)
+                selection.children.first.add_next_sibling(elem['child'])
               end
             else
 
