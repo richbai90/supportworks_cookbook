@@ -22,7 +22,9 @@ module Supportworks
 
       conf = nil
       File.open(path, 'r') do |f|
-        conf = Nokogiri::XML::Document.parse(f.read, nil, 'Windows-1252')
+        conf = Nokogiri::XML::Document.parse(f.read, nil, 'Windows-1252') do |config|
+          config.noblanks
+        end
         wrap_array(maps).each do |map|
           selection = conf.at_css(map['select'])
           wrap_array(map['add_siblings']).each do |elem|
@@ -46,7 +48,9 @@ module Supportworks
 
       unless conf.nil?
         File.open(path, 'w') do |f|
-          f.write(conf.to_xml)
+          formatted_no_decl = Nokogiri::XML::Node::SaveOptions::FORMAT +
+              Nokogiri::XML::Node::SaveOptions::NO_DECLARATION
+          f.write(conf.to_xml(:save_with => formatted_no_decl, :indent => 4))
         end
       end
     end
