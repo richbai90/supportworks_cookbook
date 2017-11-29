@@ -73,7 +73,7 @@ module Supportworks
 
       unless conf.nil?
         File.open(path, 'w') do |f|
-          formatted_no_decl = Nokogiri::XML::Node::SaveOptions::FORMAT +
+          formatted_no_decl = Nokogiri::XML::Node::SaveOptions::DEFAULT_XML +
               Nokogiri::XML::Node::SaveOptions::NO_DECLARATION
           f.write(conf.to_xml(:save_with => formatted_no_decl, :indent => 4))
         end
