@@ -19,7 +19,7 @@ action :install do
     action :install
     # checksum checksum_from_version('cs', new_resource.version)
     source repo_from_version('cs', new_resource.version, new_resource.media)
-    options create_option_string(:INSTALLDIR => path)
+    options create_option_string(:INSTALLDIR => new_resource.path)
   end
   
   registry_key 'HKEY_LOCAL_MACHINE\SOFTWARE\ODBC\ODBC.INI\Supportworks Cache' do
@@ -28,11 +28,11 @@ action :install do
                {:name => 'Description', :type => :string, :data => 'Supportworks Helpdesk Cache Data'},
                {:name => 'Driver', :type => :string, :data => ::File.join('C:', 'windows', system_folder, 'swsqlodbc.dll').gsub('/', "\\")},
                {:name => 'Option', :type => :dword, :data => 0x0},
-               {:name => 'Password', :type => :string, :data => root_pw},
+               {:name => 'Password', :type => :string, :data => new_resource.root_pw},
                {:name => 'Port', :type => :dword, :data => 0x138a},
                {:name => 'Server', :type => :string, :data => '127.0.0.1'},
                {:name => 'Stmt', :type => :string, :data => ''},
-               {:name => 'User', :type => :string, :data => root_user},
+               {:name => 'User', :type => :string, :data => new_resource.root_user},
            ]
 
      architecture(x86_64 ? :i386 : :machine)
@@ -59,7 +59,7 @@ action :install do
     architecture(x86_64 ? :i386 : :machine)
   end
 
-  if db_type == :sw
+  if new_resource.db_type == :sw
     registry_key 'HKEY_LOCAL_MACHINE\SOFTWARE\ODBC\ODBC.INI\ODBC Data Sources' do
       values [
                  {:name => 'Supportworks Data', :type => :string, :data => 'Supportworks SQL Driver'},
@@ -74,11 +74,11 @@ action :install do
                  {:name => 'Description', :type => :string, :data => 'Supportworks Helpdesk Application Data'},
                  {:name => 'Driver', :type => :string, :data => ::File.join('C:', 'windows', system_folder, 'swsqlodbc.dll').gsub('/', "\\")},
                  {:name => 'Option', :type => :dword, :data => 0x0},
-                 {:name => 'Password', :type => :string, :data => root_pw},
+                 {:name => 'Password', :type => :string, :data => new_resource.root_pw},
                  {:name => 'Port', :type => :dword, :data => 0x138a},
                  {:name => 'Server', :type => :string, :data => '127.0.0.1'},
                  {:name => 'Stmt', :type => :string, :data => ''},
-                 {:name => 'User', :type => :string, :data => root_user},
+                 {:name => 'User', :type => :string, :data => new_resource.root_user},
              ]
 
        architecture(x86_64 ? :i386 : :machine)

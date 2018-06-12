@@ -26,23 +26,23 @@ action :install do
 
   powershell_script 'install_ESP' do
     code <<~PS1
-      $DefaultAdminPassword = '#{sw_admin_pw}'
+      $DefaultAdminPassword = '#{new_resource.sw_admin_pw}'
       $InstallPath = '"#{get_path(new_resource.path, 'sw', node)}"'
       $OdbcDSN = '"Supportworks Data"'
-      $OdbcUID = '#{swdata_db_user || cache_db_user}'
-      $OdbcPWD = '#{swdata_db_password || cache_db_password}'
-      $UseSwDatabase = #{db_type == :sw ? 1 : 0}
+      $OdbcUID = '#{new_resource.swdata_db_user || new_resource.cache_db_user}'
+      $OdbcPWD = '#{new_resource.swdata_db_password || new_resource.cache_db_password}'
+      $UseSwDatabase = #{new_resource.db_type == :sw ? 1 : 0}
       $OdbcDBName = 'swdata'
       $OdbcCacheDSN = '"Supportworks Cache"'
-      $SystemDBUID = '#{cache_db_user}'
-      $SystemDBPWD = '#{cache_db_password}'
+      $SystemDBUID = '#{new_resource.cache_db_user}'
+      $SystemDBPWD = '#{new_resource.cache_db_password}'
       $EnableXMLMCDocumentation = 1
       $UseLegacyODBC = 1
 
       cd "#{new_resource.media}"
       ./SwSetup.exe -s -var:DefaultAdminPassword=$DefaultAdminPassword -var:InstallPath=$InstallPath -var:OdbcDSN=$OdbcDSN -var:OdbcUID=$OdbcUID -var:OdbcPWD=$OdbcPWD -var:UseSwDatabase=$UseSwDatabase -var:OdbcCacheDSN=$OdbcCacheDSN -var:OdbcDBName=$OdbcDBName -var:SystemDBUID=$SystemDBUID -var:SystemDBPWD=$systemDBPWD -var:EnableXMLMCDocumentation=1 -var:UseLegacyODBC=1 | Out-Null
     PS1
-    not_if { skip_esp_for_testing }
+    not_if { new_resource.skip_esp_for_testing }
   end
 
   template 'sql_configuration' do
@@ -65,7 +65,7 @@ action :install do
 
   execute 'sw_config.sql' do
     cwd ::File.join(mysql_path, 'bin')
-    command "mysql -f -u #{swdata_db_user || cache_db_user} --password=\"#{swdata_db_password || cache_db_password}\" --port 5002 < \"#{::File.join(Chef::Config['file_cache_path'], 'sw_config.sql')}\""
+    command "mysql -f -u #{new_resource.swdata_db_user || new_resource.cache_db_user} --password=\"#{new_resource.swdata_db_password || new_resource.cache_db_password}\" --port 5002 < \"#{::File.join(Chef::Config['file_cache_path'], 'sw_config.sql')}\""
     ignore_failure false
   end
 
@@ -83,51 +83,51 @@ action :configure do
     action :create
   end
 
-  if zapp.nil?
-    if media.nil?
-      remote_file ::File.join(Chef::Config['file_cache_path'], zapp_version(version)) do
-        source zapp_from_repo(version, media)
+  if new_resource.zapp.nil?
+    if new_resource.media.nil?
+      remote_file ::File.join(Chef::Config['file_cache_path'], zapp_version(new_resource.version)) do
+        source zapp_from_repo(new_resource.version, new_resource.media)
       end
-      zapp = ::File.join(Chef::Config['file_cache_path'], zapp_version(version))
+      new_resource.zapp = ::File.join(Chef::Config['file_cache_path'], zapp_version(new_resource.version))
     else
-      zapp = zapp_from_repo(version, media)
+      new_resource.zapp = zapp_from_repo(new_resource.version, new_resource.media)
     end
   else
-    if is_uri(zapp)
-      remote_file ::File.join(Chef::Config['file_cache_path'], zapp_version(version)) do
-        source zapp
+    if is_uri(new_resource.zapp)
+      remote_file ::File.join(Chef::Config['file_cache_path'], zapp_version(new_resource.version)) do
+        source new_resource.zapp
       end
-      zapp = ::File.join(Chef::Config['file_cache_path'], zapp_version(version))
+      new_resource.zapp = ::File.join(Chef::Config['file_cache_path'], zapp_version(new_resource.version))
     else
-      unless ::File.exist? zapp
-        raise "Unexpected value for zapp parameter. Got: #{zapp} expected local file or valid URI"
+      unless ::File.exist? new_resource.zapp
+        raise "Unexpected value for new_resource.zapp parameter. Got: #{new_resource.zapp} expected local file or valid URI"
       end
     end
   end
 
   execute 'license_itsm_default' do
-    command ::File.join(Chef::Config['file_cache_path'], 'ZappUtility.exe') + " '#{zapp}' -l '#{license}'"
+    command ::File.join(Chef::Config['file_cache_path'], 'ZappUtility.exe') + " '#{new_resource.zapp}' -l '#{new_resource.license}'"
   end
 
   execute 'install_itsm_default' do
     cwd ::File.join(get_path(new_resource.path, 'sw', node), 'bin')
-    command "swappinstall.exe -appinstall \"#{zapp}\""
-    # install_zapp(swpath.gsub('\\', '/'), zapp)
+    command "swappinstall.exe -appinstall \"#{new_resource.zapp}\""
+    # install_zapp(swpath.gsub('\\', '/'), new_resource.zapp)
   end
 
   ruby_block 'database_configurations' do
     block do
-      ::Dir.chdir(::File.join(get_path(path, 'sw', node), 'bin')) do
+      ::Dir.chdir(::File.join(get_path(new_resource.path, 'sw', node), 'bin')) do
         export_schema = ::File.join(Chef::Config['file_cache_path'], 'ex_dbschema.xml').gsub('/', "\\")
-        system("start cmd /k cmd /C swdbconf.exe -import \"#{::File.join(swpath, 'idata', 'itsm_default', 'dbschema.xml').gsub('/', '\\')}\" -app \"swserverservice\"  -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
+        system("start cmd /k cmd /C swdbconf.exe -import \"#{::File.join(swpath, 'idata', 'itsm_default', 'dbschema.xml').gsub('/', '\\')}\" -app \"swserverservice\"  -tdb swdata -cuid #{new_resource.swdata_db_user || new_resource.cache_db_user} -cpwd \"#{new_resource.swdata_db_password || new_resource.cache_db_password}\"")
         wait_for_db_schema
-        system("start cmd /k cmd /C swdbconf.exe -s Localhost -app \"swserverservice\" -tdb swdata -log chef_dbconf.log -pipelog -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
+        system("start cmd /k cmd /C swdbconf.exe -s Localhost -app \"swserverservice\" -tdb swdata -log chef_dbconf.log -pipelog -cuid #{new_resource.swdata_db_user || new_resource.cache_db_user} -cpwd \"#{new_resource.swdata_db_password || new_resource.cache_db_password}\"")
         wait_for_db_schema
-        system("start cmd /k cmd /C swdbconf.exe -export \"#{export_schema}\" -app \"swserverservice\" -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
+        system("start cmd /k cmd /C swdbconf.exe -export \"#{export_schema}\" -app \"swserverservice\" -tdb swdata -cuid #{new_resource.swdata_db_user || new_resource.cache_db_user} -cpwd \"#{new_resource.swdata_db_password || new_resource.cache_db_password}\"")
         wait_for_db_schema
-        system("start cmd /k cmd /C swdbconf.exe -import \"#{export_schema}\" -app \"swserverservice\"  -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
+        system("start cmd /k cmd /C swdbconf.exe -import \"#{export_schema}\" -app \"swserverservice\"  -tdb swdata -cuid #{new_resource.swdata_db_user || new_resource.cache_db_user} -cpwd \"#{new_resource.swdata_db_password || new_resource.cache_db_password}\"")
         wait_for_db_schema
-        system("start cmd /k cmd /C swdbconf.exe -s Localhost -app \"swserverservice\" -tdb swdata -log chef_dbconf.log -pipelog -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
+        system("start cmd /k cmd /C swdbconf.exe -s Localhost -app \"swserverservice\" -tdb swdata -log chef_dbconf.log -pipelog -cuid #{new_resource.swdata_db_user || new_resource.cache_db_user} -cpwd \"#{new_resource.swdata_db_password || new_resource.cache_db_password}\"")
         wait_for_db_schema
       end
     end
@@ -135,8 +135,8 @@ action :configure do
 
   execute 'install_itsm_default' do
     cwd ::File.join(get_path(new_resource.path, 'sw', node), 'bin')
-    command "swappinstall.exe -appinstall \"#{zapp}\""
-    # install_zapp(swpath.gsub('\\', '/'), zapp)
+    command "swappinstall.exe -appinstall \"#{new_resource.zapp}\""
+    # install_zapp(swpath.gsub('\\', '/'), new_resource.zapp)
   end
 
   ruby_block 'precopy ITSM' do
@@ -158,8 +158,8 @@ action :configure do
   template ::File.join(get_path(new_resource.path, 'sw', node), 'html', '_selfservice', '_itsm_default_v2_template', 'config', '_ssp_config.json') do
     source 'selfservice_config.json.erb'
     variables({
-                  :protocol => (https && 'https') || 'http',
-                  :instance_address => (fqdn && node['fqdn']) || node['ipaddress']
+                  :protocol => (new_resource.https && 'https') || 'http',
+                  :instance_address => (new_resource.fqdn && node['fqdn']) || node['ipaddress']
               })
   end
 
@@ -198,7 +198,7 @@ action :configure do
 
   execute 'swqlconfs.sql' do
     cwd ::File.join(mysql_path, 'bin')
-    command "mysql -f -u #{swdata_db_user || cache_db_user} --password=\"#{swdata_db_password || cache_db_password}\" --port 5002 < \"#{::File.join(Chef::Config['file_cache_path'], 'swsqlconfs.sql')}\""
+    command "mysql -f -u #{new_resource.swdata_db_user || new_resource.cache_db_user} --password=\"#{new_resource.swdata_db_password || new_resource.cache_db_password}\" --port 5002 < \"#{::File.join(Chef::Config['file_cache_path'], 'swsqlconfs.sql')}\""
     ignore_failure false
   end
 

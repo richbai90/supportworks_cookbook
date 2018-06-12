@@ -46,8 +46,8 @@ action :migrate do
 
   execute 'update_password' do
     cwd mysql_bin
-    command "mysql -u root --password=\"#{old_root_password}\" --port 5002 -e \"SET PASSWORD FOR 'root'@'localhost' = OLD_PASSWORD('#{to_user === 'root' ? to_password : root_password}')\""
-    only_if "cd #{'"' + mysql_bin + '"'} && mysql -u root --password=\"#{old_root_password }\" --port 5002"
+    command "mysql -u root --password=\"#{new_resource.old_root_password}\" --port 5002 -e \"SET PASSWORD FOR 'root'@'localhost' = OLD_PASSWORD('#{new_resource.to_user === 'root' ? new_resource.to_password : new_resource.root_password}')\""
+    only_if "cd #{'"' + mysql_bin + '"'} && mysql -u root --password=\"#{new_resource.old_root_password }\" --port 5002"
   end
 
   execute 'restore_data' do
@@ -70,7 +70,7 @@ action :migrate do
 
   execute 'restore data with password' do
     file_path = ::File.exists?(new_resource.host.to_s) ? new_resource.host.to_s : Chef::Config['file_cache_path']
-    password = (to_user == 'root') ? to_password : root_password
+    password = (new_resource.to_user == 'root') ? new_resource.to_password : new_resource.root_password
     cwd mysql_bin
     command "mysql -u root --password=\"#{password}\" --port 5002 -f < #{::File.join(file_path, 'dump.sql')}"
     only_if "cd #{'"' + mysql_bin + '"'} && mysql -u root --password=\"#{password}\" --port 5002"
@@ -79,7 +79,7 @@ action :migrate do
 
   execute 'restore analyst data with password' do
     file_path = ::File.exists?(new_resource.host.to_s) ? new_resource.host.to_s : Chef::Config['file_cache_path']
-    password = (to_user == 'root') ? to_password : root_password
+    password = (new_resource.to_user == 'root') ? new_resource.to_password : new_resource.root_password
     cwd mysql_bin
     command "mysql -u root --password=\"#{password}\" --port 5002 -f < #{::File.join(file_path, 'analyst_dump.sql')}"
     only_if "cd #{'"' + mysql_bin + '"'} && mysql -u root --password=\"#{password}\" --port 5002"
@@ -89,11 +89,11 @@ action :migrate do
   template ::File.join(Chef::Config['file_cache_path'], 'sw_config.sql') do
     source 'sw_config.sql.erb'
     variables({
-                  :dsn => swdata_dsn,
-                  :uid => swdata_user || to_user,
-                  :pwd => swdata_pw || to_password,
-                  :root => (to_user == 'root') ? to_user : root_user,
-                  :root_pwd => (to_user == 'root') ? to_password : root_password
+                  :dsn => new_resource.swdata_dsn,
+                  :uid => new_resource.swdata_user || new_resource.to_user,
+                  :pwd => new_resource.swdata_pw || new_resource.to_password,
+                  :root => (new_resource.to_user == 'root') ? new_resource.to_user : new_resource.root_user,
+                  :root_pwd => (new_resource.to_user == 'root') ? new_resource.to_password : new_resource.root_password
               })
   end
 end

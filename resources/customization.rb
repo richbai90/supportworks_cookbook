@@ -118,7 +118,7 @@ action :install do
         ruby_block "Backup and copy files from #{d["package"]}" do
           block do
             xmls = wrap_array(_setup['xml'])
-            backup_folder = backup_and_copy(::File.join(_cwd, d["package"]), swserver, core_services, ::File.join(mysql_path, 'bin'), swdata_db_user || cache_db_user, swdata_db_password || cache_db_password, d['then'])
+            backup_folder = backup_and_copy(::File.join(_cwd, d["package"]), swserver, core_services, ::File.join(mysql_path, 'bin'), new_resource.swdata_db_user || new_resource.cache_db_user, new_resource.swdata_db_password || new_resource.cache_db_password, d['then'])
             unless xmls.empty?
               xmls.each do |xml|
                 backup_xml = xml['path'].gsub(swserver, '').gsub(core_services, '')
@@ -137,15 +137,15 @@ action :install do
               p 'Applying Schema Changes'
               ::Dir.chdir(::File.join(swserver, 'bin')) do
                 export_schema = ::File.join(Chef::Config['file_cache_path'], 'ex_dbschema.xml').gsub('/', "\\")
-                system("start cmd /k cmd /C swdbconf.exe -import \"#{_setup["db_schema"].gsub('/', '\\')}\"  -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
+                system("start cmd /k cmd /C swdbconf.exe -import \"#{_setup["db_schema"].gsub('/', '\\')}\"  -tdb swdata -cuid #{new_resource.swdata_db_user || new_resource.cache_db_user} -cpwd \"#{new_resource.swdata_db_password || new_resource.cache_db_password}\"")
                 wait_for_db_schema
-                system("start cmd /k cmd /C swdbconf.exe -s Localhost -app \"swserverservice\" -tdb swdata -log chef_dbconf.log -pipelog -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
+                system("start cmd /k cmd /C swdbconf.exe -s Localhost -app \"swserverservice\" -tdb swdata -log chef_dbconf.log -pipelog -cuid #{new_resource.swdata_db_user || new_resource.cache_db_user} -cpwd \"#{new_resource.swdata_db_password || new_resource.cache_db_password}\"")
                 wait_for_db_schema
-                system("start cmd /k cmd /C swdbconf.exe -export \"#{export_schema}\" -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
+                system("start cmd /k cmd /C swdbconf.exe -export \"#{export_schema}\" -tdb swdata -cuid #{new_resource.swdata_db_user || new_resource.cache_db_user} -cpwd \"#{new_resource.swdata_db_password || new_resource.cache_db_password}\"")
                 wait_for_db_schema
-                system("start cmd /k cmd /C swdbconf.exe -import \"#{export_schema}\"  -tdb swdata -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
+                system("start cmd /k cmd /C swdbconf.exe -import \"#{export_schema}\"  -tdb swdata -cuid #{new_resource.swdata_db_user || new_resource.cache_db_user} -cpwd \"#{new_resource.swdata_db_password || new_resource.cache_db_password}\"")
                 wait_for_db_schema
-                system("start cmd /k cmd /C swdbconf.exe -s Localhost -app \"swserverservice\" -tdb swdata -log chef_dbconf.log -pipelog -cuid #{swdata_db_user || cache_db_user} -cpwd \"#{swdata_db_password || cache_db_password}\"")
+                system("start cmd /k cmd /C swdbconf.exe -s Localhost -app \"swserverservice\" -tdb swdata -log chef_dbconf.log -pipelog -cuid #{new_resource.swdata_db_user || new_resource.cache_db_user} -cpwd \"#{new_resource.swdata_db_password || new_resource.cache_db_password}\"")
                 wait_for_db_schema
               end
             end
@@ -165,7 +165,7 @@ action :install do
 
             execute query do
               cwd ::File.join(mysql_path, 'bin')
-              command "mysql --port=5002 -u #{swdata_db_user || cache_db_user} --password=\"#{swdata_db_password || cache_db_password}\" < #{'"' + tmppath + '"'}"
+              command "mysql --port=5002 -u #{new_resource.swdata_db_user || new_resource.cache_db_user} --password=\"#{new_resource.swdata_db_password || new_resource.cache_db_password}\" < #{'"' + tmppath + '"'}"
             end
           end
         end
@@ -265,7 +265,7 @@ action :install do
       else
         ruby_block "Backup and copy files from #{d["package"]}" do
           block do
-            backup_and_copy(::File.join(_cwd, d["package"]), swserver, core_services, ::File.join(mysql_path, 'bin'), swdata_db_user || cache_db_user, swdata_db_password || cache_db_password, d['then'])
+            backup_and_copy(::File.join(_cwd, d["package"]), swserver, core_services, ::File.join(mysql_path, 'bin'), new_resource.swdata_db_user || new_resource.cache_db_user, new_resource.swdata_db_password || new_resource.cache_db_password, d['then'])
           end
         end
       end
@@ -276,8 +276,8 @@ action :install do
     path ::File.join(backup_folder(swserver), 'restore.bat')
     source 'restore.bat.erb'
     variables({
-                  :usr => swdata_db_user || cache_db_user,
-                  :pass => swdata_db_password || cache_db_password,
+                  :usr => new_resource.swdata_db_user || new_resource.cache_db_user,
+                  :pass => new_resource.swdata_db_password || new_resource.cache_db_password,
                   :mysql => ::File.join(mysql_path, 'bin').gsub('/', "\\")
               })
   end
